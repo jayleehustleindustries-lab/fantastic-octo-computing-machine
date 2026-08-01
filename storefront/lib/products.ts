@@ -44,7 +44,7 @@ function toCategory(value: string): Category {
  * explicitly gone (donated, liquidated, passed on, pulled from inventory)
  * counts as available, since most rows are simply "not graded/listed yet."
  */
-function isAvailable(inventoryStatus: string, condition: string): boolean {
+export function isAvailable(inventoryStatus: string, condition: string): boolean {
   const text = `${inventoryStatus} ${condition}`.toLowerCase();
   const gone = ["donated", "liquidated", "passed / not purchased", "removed from inventory", "not for sale", "sold"];
   return !gone.some((phrase) => text.includes(phrase));
