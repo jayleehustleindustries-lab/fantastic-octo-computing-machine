@@ -1,6 +1,6 @@
 export default function AboutPage() {
   const showCrossPromo = process.env.NEXT_PUBLIC_SHOW_CROSS_PROMO !== "false";
-  const jayLeeFitUrl = process.env.NEXT_PUBLIC_JAYLEEFIT_URL || "#";
+  const jayLeeFitUrl = process.env.NEXT_PUBLIC_JAYLEEFIT_URL || "https://www.jayleefit.com";
   const jayLeeFitLabel = process.env.NEXT_PUBLIC_JAYLEEFIT_LABEL || "JayLeeFit Coaching";
 
   return (

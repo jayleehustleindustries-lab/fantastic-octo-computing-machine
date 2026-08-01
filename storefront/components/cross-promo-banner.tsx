@@ -11,7 +11,7 @@ export default function CrossPromoBanner() {
   const show = process.env.NEXT_PUBLIC_SHOW_CROSS_PROMO !== "false";
   if (!show) return null;
 
-  const url = process.env.NEXT_PUBLIC_JAYLEEFIT_URL || "#";
+  const url = process.env.NEXT_PUBLIC_JAYLEEFIT_URL || "https://www.jayleefit.com";
   const label = process.env.NEXT_PUBLIC_JAYLEEFIT_LABEL || "JayLeeFit Coaching";
 
   return (
