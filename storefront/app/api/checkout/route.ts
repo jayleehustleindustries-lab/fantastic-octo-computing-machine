@@ -53,6 +53,17 @@ export async function POST(request: Request) {
       success_url: `${siteUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${siteUrl}/checkout/cancel`,
       shipping_address_collection: { allowed_countries: ["US", "CA"] },
+      // Flat rate until real carrier rates are wired up (e.g. via Shippo) —
+      // better than quoting $0 shipping on physical one-off items.
+      shipping_options: [
+        {
+          shipping_rate_data: {
+            type: "fixed_amount",
+            fixed_amount: { amount: 699, currency: "usd" },
+            display_name: "Standard shipping (5-7 business days)",
+          },
+        },
+      ],
     });
 
     return NextResponse.json({ url: session.url });

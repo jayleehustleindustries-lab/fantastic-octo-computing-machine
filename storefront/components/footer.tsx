@@ -45,8 +45,13 @@ export default function Footer() {
 
       <CrossPromoBanner />
 
-      <div className="px-4 py-4 text-center font-mono text-[10px] uppercase tracking-widest text-ash sm:px-6">
-        © {new Date().getFullYear()} Old Light. All pieces pre-owned &amp; authenticated by hand.
+      <div className="flex flex-col items-center gap-2 px-4 py-4 text-center font-mono text-[10px] uppercase tracking-widest text-ash sm:px-6">
+        <div className="flex gap-4">
+          <Link href="/shipping-returns" className="hover:text-gold">Shipping &amp; Returns</Link>
+          <Link href="/privacy" className="hover:text-gold">Privacy</Link>
+          <Link href="/terms" className="hover:text-gold">Terms</Link>
+        </div>
+        <p>© {new Date().getFullYear()} Old Light. All pieces pre-owned &amp; authenticated by hand.</p>
       </div>
     </footer>
   );
