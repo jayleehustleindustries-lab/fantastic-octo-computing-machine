@@ -9,7 +9,7 @@ import type { Category, Product } from "./types";
  * the gviz CSV export endpoint. See storefront/README.md for the exact
  * column headers expected.
  */
-const SHEET_ID = process.env.GOOGLE_SHEET_ID;
+const SHEET_ID = process.env.GOOGLE_SHEET_ID || "1-UcTy4Cr_NPK622SPRXob7LfpHFEw5874mv9y5E90Ys";
 const SHEET_NAME = process.env.GOOGLE_SHEET_NAME || "Inventory";
 
 function slugify(input: string): string {
