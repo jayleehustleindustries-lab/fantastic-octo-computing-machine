@@ -9,7 +9,7 @@
 import { readFileSync, writeFileSync } from "fs";
 import { csvToObjects } from "../csv";
 import { isAvailable } from "../products";
-import { rowToFacebookListing, type FacebookListing } from "./facebook";
+import { alreadyOnFacebook, rowToFacebookListing, type FacebookListing } from "./facebook";
 
 const SHEET_ID =
   process.env.GOOGLE_SHEET_ID || "1-UcTy4Cr_NPK622SPRXob7LfpHFEw5874mv9y5E90Ys";
@@ -35,17 +35,24 @@ async function main() {
   const csv = await loadCsv(localCsvPath);
   const rows = csvToObjects(csv);
 
-  const available = rows.filter((row) =>
-    isAvailable(row["Inventory Status"] || "", row["Condition"] || "")
+  const available = rows.filter(
+    (row) =>
+      isAvailable(row["Inventory Status"] || "", row["Condition"] || "") &&
+      !alreadyOnFacebook(row)
   );
   const listings = available
     .map(rowToFacebookListing)
     .filter((l): l is FacebookListing => l !== null);
+  const alreadyPostedCount = rows.filter(
+    (row) => isAvailable(row["Inventory Status"] || "", row["Condition"] || "") && alreadyOnFacebook(row)
+  ).length;
 
   const doc = [
     "# Facebook Marketplace posting checklist — EHC Inventory",
     "",
     `Generated ${new Date().toISOString().slice(0, 10)}. Check each item off as you post it.`,
+    `${alreadyPostedCount} item(s) already marked Facebook in the sheet's Listing Platforms` +
+      " column are left off this list.",
     "",
     ...listings.map((l) => `- [ ] **${l.sku}** — ${l.title} — $${l.price}`),
   ].join("\n");
@@ -54,7 +61,9 @@ async function main() {
     process.argv.slice(2).find((a) => !a.startsWith("--")) ||
     "facebook-marketplace-checklist.md";
   writeFileSync(outPath, doc, "utf-8");
-  console.log(`${listings.length} items written to ${outPath}`);
+  console.log(
+    `${listings.length} items written to ${outPath} (${alreadyPostedCount} already-posted item(s) skipped)`
+  );
 }
 
 main().catch((err) => {

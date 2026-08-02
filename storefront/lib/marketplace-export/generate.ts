@@ -11,7 +11,7 @@
 import { readFileSync, writeFileSync } from "fs";
 import { csvToObjects } from "../csv";
 import { isAvailable } from "../products";
-import { rowToFacebookListing, type FacebookListing } from "./facebook";
+import { alreadyOnFacebook, rowToFacebookListing, type FacebookListing } from "./facebook";
 
 const SHEET_ID =
   process.env.GOOGLE_SHEET_ID || "1-UcTy4Cr_NPK622SPRXob7LfpHFEw5874mv9y5E90Ys";
@@ -58,8 +58,10 @@ async function main() {
   const csv = await loadCsv(localCsvPath);
   const rows = csvToObjects(csv);
 
-  const available = rows.filter((row) =>
-    isAvailable(row["Inventory Status"] || "", row["Condition"] || "")
+  const available = rows.filter(
+    (row) =>
+      isAvailable(row["Inventory Status"] || "", row["Condition"] || "") &&
+      !alreadyOnFacebook(row)
   );
   const listings = available
     .map(rowToFacebookListing)
@@ -71,7 +73,8 @@ async function main() {
     `Generated ${new Date().toISOString().slice(0, 10)} from the live EHC Inventory Log.`,
     `${listings.length} listing(s) below, ready to copy-paste one at a time into` +
       " Facebook Marketplace's own posting form. Photos still need manual upload —" +
-      " there's no URL-based photo import on Facebook.",
+      " there's no URL-based photo import on Facebook. Items already marked Facebook" +
+      " in the sheet's Listing Platforms column are left off this list.",
     "",
     "---",
     "",

@@ -63,6 +63,11 @@ function guessFacebookCategory(department: string): string {
   return "Clothing & accessories (double-check FB's exact category)";
 }
 
+/** True once the sheet's own Listing Platforms column already says Facebook. */
+export function alreadyOnFacebook(row: Record<string, string>): boolean {
+  return (row["Listing Platforms"] || "").toLowerCase().includes("facebook");
+}
+
 export function rowToFacebookListing(row: Record<string, string>): FacebookListing | null {
   const name = row["SEO Listing Title"] || row["Item Name"] || "";
   if (!name) return null;
