@@ -73,9 +73,16 @@ export default async function ProductPage({
             {product.description}
           </p>
 
-          <p className="font-mono text-xs uppercase tracking-widest text-ember">
+          {/* Scarcity stated once, as a reason for full disclosure rather than
+              as a deadline — see BRAND-VOICE.md. Ember is reserved for a real
+              state change (sold); an in-stock item gets the calm treatment. */}
+          <p
+            className={`font-mono text-xs uppercase tracking-widest ${
+              product.inStock ? "text-ash" : "text-ember"
+            }`}
+          >
             {product.inStock
-              ? "Only 1 available — once the light moves on, it's gone."
+              ? "One of one — so everything we know about it is on this page, flaws included."
               : "This one's sold — check the shop for the next find."}
           </p>
 

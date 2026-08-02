@@ -1,9 +1,14 @@
+/**
+ * Runs on every page, so this is the brand's most repeated statement —
+ * it says what we do for the buyer, not what they stand to lose by
+ * waiting. See BRAND-VOICE.md.
+ */
 const DEFAULT_ITEMS = [
   "EVERY PIECE ALREADY HAS A PAST",
-  "NEW FINDS UNDER OLD LIGHT, WEEKLY",
+  "GRADED BEFORE IT'S PRICED",
+  "CLOSE CALLS ROUND DOWN, NEVER UP",
   "MEN'S & WOMEN'S",
-  "GRADED BY THE MOON, NOT A NUMBER",
-  "ONE-OF-ONE — ONCE IT'S GONE, IT'S GONE",
+  "ONE PRICE — NO BIDDING WAR",
 ];
 
 export default function Marquee({ items = DEFAULT_ITEMS }: { items?: string[] }) {

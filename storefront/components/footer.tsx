@@ -9,9 +9,13 @@ export default function Footer() {
           <p className="font-display text-xl font-semibold tracking-wide text-chalk">
             OLD <span className="text-gold">LIGHT</span>
           </p>
+          {/* "Authenticated" was removed deliberately — it names a specific
+              counterfeit-verification service we don't perform. See the
+              unearned-claims section of BRAND-VOICE.md. */}
           <p className="mt-2 max-w-xs font-mono text-xs text-ash">
-            Secondhand, sold under old light. Authenticated men&apos;s &amp; women&apos;s
-            clothing, graded by the moon and priced like it already lived a life.
+            Secondhand, sold under old light. Men&apos;s &amp; women&apos;s clothing
+            checked by hand, graded by the moon, and priced like it already lived
+            a life.
           </p>
         </div>
 
@@ -51,7 +55,7 @@ export default function Footer() {
           <Link href="/privacy" className="hover:text-gold">Privacy</Link>
           <Link href="/terms" className="hover:text-gold">Terms</Link>
         </div>
-        <p>© {new Date().getFullYear()} Old Light. All pieces pre-owned &amp; authenticated by hand.</p>
+        <p>© {new Date().getFullYear()} Old Light. Every piece pre-owned, graded &amp; checked by hand.</p>
       </div>
     </footer>
   );

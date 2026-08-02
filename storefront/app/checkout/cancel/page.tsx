@@ -6,8 +6,8 @@ export default function CheckoutCancelPage() {
       <p className="font-mono text-xs uppercase tracking-widest text-ember">Checkout canceled</p>
       <h1 className="mt-4 font-display text-4xl font-semibold tracking-wide">STILL IN YOUR CART.</h1>
       <p className="mt-4 max-w-md font-sans text-sm text-ash">
-        Nothing was charged. Your cart is still saved — but these are one-off pieces,
-        so don&apos;t sit on it too long.
+        Nothing was charged, and your cart is still saved. Take the time you need —
+        we&apos;d rather you were sure about a piece than quick about it.
       </p>
       <Link
         href="/shop"
