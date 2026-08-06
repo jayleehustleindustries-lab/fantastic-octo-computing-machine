@@ -30,33 +30,15 @@ Add `--copy` to leave the original in the inbox.
 
 ## What's here
 
-23 unique images. All are square 2400×2400 except where noted.
+See **[INDEX.md](INDEX.md)** for the current file list with dimensions —
+it's generated, so it stays accurate as the inbox grows:
 
-| File | Dimensions | Notes |
-|---|---|---|
-| `IMG_0487-Photoroom.jpg` | 1800×2400 | portrait, not square |
-| `IMG_0491-Photoroom.jpg` | 1800×2400 | portrait, not square |
-| `IMG_0541-Photoroom.jpg` | 2400×2400 | |
-| `IMG_0753-Photoroom.jpg` | 2400×2400 | |
-| `IMG_0757-Photoroom.jpg` | 2400×2400 | |
-| `IMG_0773-Photoroom.jpg` | 2400×2400 | |
-| `IMG_2047-Photoroom.jpg` | 2400×2400 | |
-| `IMG_2055-Photoroom.jpg` | 2400×2400 | |
-| `IMG_2061-Photoroom.jpg` | 2400×2400 | |
-| `IMG_2067-Photoroom.jpg` | 2400×2400 | |
-| `IMG_2103-Photoroom.jpg` | 2400×2400 | |
-| `IMG_2107-Photoroom.jpg` | 2400×2400 | |
-| `IMG_2109-Photoroom.jpg` | 2400×2400 | measurement shot (ruler) |
-| `IMG_2752-Photoroom.jpg` | 2400×2400 | |
-| `IMG_2753-Photoroom.jpg` | 2400×2400 | |
-| `IMG_2761-Photoroom.jpg` | 2400×2400 | |
-| `IMG_2770-Photoroom.jpg` | 2400×2400 | |
-| `IMG_2783-Photoroom.jpg` | 2400×2400 | |
-| `IMG_2787-Photoroom.jpg` | 2400×2400 | |
-| `IMG_2794-Photoroom.jpg` | 2400×2400 | |
-| `IMG_2798-Photoroom.jpg` | 2400×2400 | |
-| `IMG_4094-Photoroom.jpeg` | 1600×1600 | care-tag detail shot |
-| `IMG_5104-Photoroom.jpeg` | 2400×2400 | |
+```bash
+npx tsx lib/build-inbox-index.ts
+```
+
+Anything flagged **not square** wants a crop before assignment: the
+storefront's product grid is 4:5 and marketplaces prefer square.
 
 **More still to come.** This is a partial pull of a larger Drive library.
 Every image is one connector call (the environment's proxy blocks direct
