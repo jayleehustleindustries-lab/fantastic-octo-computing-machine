@@ -1,4 +1,5 @@
 import { csvToObjects } from "./csv";
+import { PRODUCT_IMAGES } from "./product-images.generated";
 import { sampleProducts } from "./sample-products";
 import type { Category, Product } from "./types";
 
@@ -66,6 +67,19 @@ function splitMulti(value: string): string[] {
     .filter(Boolean);
 }
 
+/**
+ * Photos for a SKU that live in the repo at public/products/<SKU>/, via the
+ * generated manifest. The real EHC sheet has no usable photo column — its
+ * `White Photo Links` column is filled on 4 of 78 rows and 3 of those hold
+ * misaligned text rather than links — and there's no write access to fix
+ * that from here. Committing photos to the repo sidesteps the sheet
+ * entirely, and once deployed the same files are public URLs that a
+ * marketplace or crosslister can also point at.
+ */
+export function imagesForSku(sku: string): string[] {
+  return PRODUCT_IMAGES[sku.trim().toUpperCase()] ?? [];
+}
+
 /** "2026-06-22" (the sheet's Timestamp column, when the row was logged) -> days since then. */
 function toDaysInInventory(value: string): number | null {
   if (!value.trim()) return null;
@@ -115,7 +129,12 @@ export function rowsToProducts(rows: Record<string, string>[]): Product[] {
         originalPrice,
         price,
         description: row["SEO Listing Description"] || row["Description"] || "",
-        images: splitMulti(row["Images"] || row["Image"] || ""),
+        // Sheet-supplied URLs win when present; otherwise fall back to
+        // photos committed under public/products/<SKU>/.
+        images: (() => {
+          const fromSheet = splitMulti(row["Images"] || row["Image"] || "");
+          return fromSheet.length > 0 ? fromSheet : imagesForSku(sku);
+        })(),
         tags,
         inStock: row["In Stock"]
           ? toBool(row["In Stock"])

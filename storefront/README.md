@@ -69,9 +69,42 @@ immediately.
    `daysInInventory` — no extra setup needed. Verified against a real
    71-row export — see `lib/verify-ehc-mapping.ts`.
 
-   That sheet has no photo column yet, so every item renders the "Photo
-   coming soon" placeholder until `Images` (or per-item Drive folders) get
-   wired up — a real next step, not done here.
+   That sheet has no usable photo column, so items render the "Photo coming
+   soon" placeholder until photos are added — see **Product photos** below
+   for the way around that.
+
+## Product photos
+
+An item's photos come from the sheet's `Images` column when it has one.
+When it doesn't, the storefront falls back to photos committed to this
+repo, one folder per SKU:
+
+```
+public/products/A1-MD-0001/1.jpg   ->  /products/A1-MD-0001/1.jpg
+public/products/A1-MD-0001/2.jpg   ->  /products/A1-MD-0001/2.jpg
+```
+
+After adding or removing photos, regenerate the lookup:
+
+```bash
+npx tsx lib/build-image-manifest.ts
+```
+
+That rewrites `lib/product-images.generated.ts` (checked in, never edited
+by hand). A generated manifest is used rather than reading the directory
+at runtime because `lib/products.ts` is imported by a client component
+(`components/cart-drawer.tsx`), so it can't touch `fs`.
+
+Folders are named by SKU rather than files being named `<SKU>-1.jpg`
+because EHC SKUs contain hyphens *and* end in digits (`A1-MD-0001`),
+which makes that filename convention impossible to split reliably.
+
+**Why photos live in the repo at all:** the real EHC sheet's `White Photo
+Links` column is filled on 4 of 78 rows, and 3 of those hold misaligned
+text instead of links — and there's no write access to repair it from
+code (see `CLAUDE.md`). Committing photos sidesteps the sheet entirely,
+and once deployed these are public URLs a marketplace or crosslister can
+point at too.
 
 2. Share the sheet: **Share → Anyone with the link → Viewer**.
 3. Copy the ID out of the sheet's URL (`.../d/THIS-PART/edit`) into
