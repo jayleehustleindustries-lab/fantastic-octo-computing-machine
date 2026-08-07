@@ -3,7 +3,8 @@
 A fully custom-designed (not a Shopify theme) storefront for reselling
 pre-owned men's and women's apparel. Celestial/night-sky aesthetic: near-black
 + warm gold, an elegant serif for names, a moon-phase condition grading
-system, and one-off inventory framed as "grab it before the light moves on."
+system, and one-off inventory framed around care rather than urgency — see
+`BRAND-VOICE.md` for why, and for the rules any new copy has to pass.
 
 Brand: **Old Light** — *"Secondhand, sold under old light."* The core idea:
 starlight you see tonight already left its source years ago, arriving
@@ -73,6 +74,30 @@ immediately.
    soon" placeholder until photos are added — see **Product photos** below
    for the way around that.
 
+2. Share the sheet: **Share → Anyone with the link → Viewer**.
+3. Copy the ID out of the sheet's URL (`.../d/THIS-PART/edit`) into
+   `GOOGLE_SHEET_ID`, and set `GOOGLE_SHEET_NAME` to the tab name.
+
+The storefront re-fetches the sheet on a 60-second cache, so editing the
+sheet is the entire "adding inventory" workflow — no redeploys needed.
+
+> **Not automated yet:** marking an item sold after checkout is manual today
+> (flip `In Stock` to `N`). Automating that write requires a Google service
+> account with *edit* access to the sheet — the read-only CSV export used
+> here can't write. The Stripe webhook (`app/api/checkout/webhook/route.ts`)
+> already logs which SKUs were purchased, so wiring up the write-back later
+> is mostly plumbing, not a redesign.
+
+## Shareable preview
+
+`preview/old-light-preview.html` is the whole storefront as one
+self-contained file — no server, no build, no network. Open it in a
+browser or send it to someone who needs to see the shop before it's
+deployed. All 78 products in it are real inventory rows; the brand
+tokens and the moon-phase thresholds are copied from this codebase so
+the two can't drift. See `preview/README.md` for what's deliberately
+not real in it, and how to regenerate after data or copy changes.
+
 ## Product photos
 
 An item's photos come from the sheet's `Images` column when it has one.
@@ -105,20 +130,6 @@ text instead of links — and there's no write access to repair it from
 code (see `CLAUDE.md`). Committing photos sidesteps the sheet entirely,
 and once deployed these are public URLs a marketplace or crosslister can
 point at too.
-
-2. Share the sheet: **Share → Anyone with the link → Viewer**.
-3. Copy the ID out of the sheet's URL (`.../d/THIS-PART/edit`) into
-   `GOOGLE_SHEET_ID`, and set `GOOGLE_SHEET_NAME` to the tab name.
-
-The storefront re-fetches the sheet on a 60-second cache, so editing the
-sheet is the entire "adding inventory" workflow — no redeploys needed.
-
-> **Not automated yet:** marking an item sold after checkout is manual today
-> (flip `In Stock` to `N`). Automating that write requires a Google service
-> account with *edit* access to the sheet — the read-only CSV export used
-> here can't write. The Stripe webhook (`app/api/checkout/webhook/route.ts`)
-> already logs which SKUs were purchased, so wiring up the write-back later
-> is mostly plumbing, not a redesign.
 
 ## Connecting Stripe
 

@@ -1,0 +1,111 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Old Light brand tokens — copied verbatim from storefront/app/globals.css
+   so the artifact and the real Next.js site cannot drift apart. */
+:root {
+  --void: #0a0a14;
+  --panel: #15162c;
+  --gold: #c9a24e;
+  --goldsoft: #e0c384;
+  --umbra: #a894cf;
+  --chalk: #ede6d8;
+  --ash: #948fb0;
+  --ember: #b6633f;
+  --line: #2a2b45;
+
+  /* The real site loads Cormorant Garamond / Libre Franklin / Space Mono.
+     A published artifact runs under a CSP that blocks external font hosts,
+     so these are the closest stacks already on the viewer's machine. */
+  --font-display: Cormorant Garamond, Georgia, "Times New Roman", serif;
+  --font-sans: "Libre Franklin", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, sans-serif;
+  --font-mono: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+html,
+body,
+#root {
+  background: var(--void);
+  color: var(--chalk);
+  font-family: var(--font-sans);
+  min-height: 100%;
+}
+
+* {
+  border-color: var(--line);
+}
+
+@layer utilities {
+  .font-display { font-family: var(--font-display); }
+  .font-mono2 { font-family: var(--font-mono); }
+
+  .text-gold { color: var(--gold); }
+  .text-chalk { color: var(--chalk); }
+  .text-ash { color: var(--ash); }
+  .text-ember { color: var(--ember); }
+  .text-umbra { color: var(--umbra); }
+  .bg-void { background-color: var(--void); }
+  .bg-panel { background-color: var(--panel); }
+  .bg-gold { background-color: var(--gold); }
+  .border-line { border-color: var(--line); }
+
+  /* Starfield: faint fixed points, not a gradient wash. */
+  .bg-noise {
+    background-image:
+      radial-gradient(1px 1px at 12% 22%, rgba(237, 230, 216, 0.5), transparent),
+      radial-gradient(1px 1px at 47% 8%, rgba(237, 230, 216, 0.35), transparent),
+      radial-gradient(1px 1px at 73% 35%, rgba(201, 162, 78, 0.5), transparent),
+      radial-gradient(1px 1px at 88% 14%, rgba(237, 230, 216, 0.3), transparent),
+      radial-gradient(1px 1px at 28% 62%, rgba(237, 230, 216, 0.28), transparent),
+      radial-gradient(1px 1px at 61% 78%, rgba(201, 162, 78, 0.35), transparent),
+      radial-gradient(1px 1px at 8% 85%, rgba(237, 230, 216, 0.25), transparent);
+  }
+
+  .halftone {
+    background-image: repeating-linear-gradient(
+      45deg,
+      rgba(148, 143, 176, 0.06) 0px,
+      rgba(148, 143, 176, 0.06) 1px,
+      transparent 1px,
+      transparent 6px
+    );
+  }
+}
+
+/* Condition grading drawn as an actual moon, not an icon font. */
+.moon {
+  width: 12px;
+  height: 12px;
+  border-radius: 9999px;
+  display: inline-block;
+  flex: none;
+  border: 1px solid var(--gold);
+}
+.moon.phase-full { background: var(--goldsoft); }
+.moon.phase-gibbous {
+  background: linear-gradient(90deg, var(--goldsoft) 72%, transparent 72%);
+}
+.moon.phase-half {
+  background: linear-gradient(90deg, var(--goldsoft) 50%, transparent 50%);
+}
+.moon.phase-crescent {
+  background: linear-gradient(90deg, var(--goldsoft) 26%, transparent 26%);
+}
+
+.marquee-track {
+  animation: marquee 42s linear infinite;
+}
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track { animation: none; }
+}
+
+::selection {
+  background: var(--gold);
+  color: var(--void);
+}
