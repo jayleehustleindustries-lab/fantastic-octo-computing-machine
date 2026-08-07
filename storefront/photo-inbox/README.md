@@ -14,6 +14,20 @@ is. That match is a human call.
 This folder is deliberately **outside `public/`**, so nothing here is
 served or bundled until it's been assigned to a SKU.
 
+## Matching photos to items, visually
+
+Rather than reading filenames and guessing, generate the matcher:
+
+```bash
+python3 tools/build-photo-matcher.py    # needs: pip install Pillow
+```
+
+That writes `tools/photo-matcher.html` — a self-contained page (no
+server, no network) showing each photo beside the searchable inventory.
+Click the item a photo belongs to and it records the pairing; progress
+is saved in the browser, so it can be done in several sittings. It
+outputs a plain `filename -> SKU` list to feed the command below.
+
 ## Assigning a photo to an item
 
 ```bash
