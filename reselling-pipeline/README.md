@@ -26,7 +26,8 @@ What's real right now:
 What's NOT real yet, on purpose:
 - The Poshmark scraper (`scraper/poshmark_scraper.py`) is unrun. It needs
   your logged-in Poshmark session, which nobody should hand to a cloud
-  session. Run it on your own machine (see below).
+  session. Run it on your own machine, or hand `GROKBOT_HANDOFF.md` to
+  another agent that can drive a browser with your session (see below).
 - Product images are placeholder URLs (`example.com/...`) in the two seed
   rows — no real image URLs were available from a screenshot, only text.
   Don't push more products to Shopify until real image URLs (from Drive or
@@ -35,18 +36,43 @@ What's NOT real yet, on purpose:
 - Nothing runs on a schedule. This is manual-trigger scripts until you've
   reviewed the shape of the data and decided it's right.
 
+## Self-correction built into the pipeline
+
+Two failure modes matter most for a 367-item batch: a bad row poisoning the
+whole run, and a network/rate-limit hiccup causing a duplicate or a silent
+drop. Both are handled:
+
+- **`etl/sheets_to_supabase.py` validates every row before it touches
+  Supabase.** Missing required fields, non-numeric prices, or duplicate SKUs
+  within the same CSV send that row to `<csv>_rejected.csv` with a reason —
+  the rest of the batch still runs. A row that's valid but incomplete (no
+  image, no condition) is inserted with `needs_review = true` and excluded
+  from the Shopify push until you clear it — it's never silently dropped.
+- **`shopify/push_to_shopify.py` is idempotent.** Before creating a product
+  it checks Shopify for an existing one with that SKU — if a previous run
+  crashed after creating the product but before recording
+  `shopify_product_id` in Supabase, this run reconciles that product instead
+  of creating a duplicate. Every Shopify API call retries with exponential
+  backoff on rate limits/timeouts (`lib/retry.py`). A row that still fails
+  after retries is marked `status = 'error'` with the reason in
+  `error_message` — it won't retry-loop forever, but `--retry-errors`
+  requeues it once you've investigated.
+
 ## Pipeline stages
 
-1. **Ingest** (`scraper/poshmark_scraper.py`) — Playwright script that reads
-   your own Poshmark closet and writes rows into `etl/inventory_seed.csv`.
-   Run it locally: `python scraper/poshmark_scraper.py --output etl/inventory_seed.csv`.
-   Requires you to log in interactively in the opened browser window — the
-   script does not store or transmit your credentials anywhere.
-
-   Alternative, lower-risk source: if you already export inventory from
-   Vendoo (you mentioned cross-listing through it), that export is cleaner
-   and doesn't touch Poshmark's bot detection at all. Point
-   `etl/sheets_to_supabase.py` at that CSV instead.
+1. **Ingest** — three ways to get the CSV, pick one:
+   - `scraper/poshmark_scraper.py` — Playwright script, run **locally**:
+     `python scraper/poshmark_scraper.py --closet-url <your closet> --output etl/inventory_seed.csv`.
+     You log in interactively in the opened browser window; the script never
+     stores or transmits your credentials.
+   - `GROKBOT_HANDOFF.md` — a self-contained spec you can hand to Grok (or
+     any other agent that can drive a browser under your logged-in session)
+     to do the scraping for you. It defines the exact CSV schema this
+     pipeline expects, so the output drops straight into step 2 with no
+     reformatting.
+   - Vendoo export — if you already cross-list through Vendoo, its export is
+     cleaner and doesn't touch Poshmark's bot detection at all. Reshape it
+     to match `etl/csv_template.csv`'s columns and skip the scraper entirely.
 
 2. **Stage & clean** (`etl/sheets_to_supabase.py`) — reads a CSV (from the
    scraper, Vendoo, or hand-entry using `etl/csv_template.csv`), dedupes by

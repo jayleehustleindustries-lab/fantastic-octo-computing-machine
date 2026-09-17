@@ -1,2 +1,5 @@
 .env
 etl/inventory_seed.csv
+etl/*_rejected.csv
+__pycache__/
+*.pyc
