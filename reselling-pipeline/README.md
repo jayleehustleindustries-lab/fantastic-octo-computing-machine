@@ -36,6 +36,40 @@ What's NOT real yet, on purpose:
 - Nothing runs on a schedule. This is manual-trigger scripts until you've
   reviewed the shape of the data and decided it's right.
 
+## Real inventory import: `EHC_inventory_database` (2026-09-18)
+
+All 78 rows from your actual `EHC_inventory_database` Google Sheet are now in
+Supabase (`source='ehc_sheet'`) — see `etl/imports/README.md` for the full
+detail. The short version: **none of them are ready to push to Shopify yet**,
+and that's a data problem in the sheet, not a pipeline problem:
+
+- 0 of 78 rows have a usable photo URL. Real photos exist in your
+  `EHC-Inventory-Ready-To-List` Drive folder, but they're named by
+  camera/export ID (`IMG_6574-Photoroom-Photoroom.jpg`), not by SKU — nothing
+  currently maps a photo file to a row. That matching has to happen (by hand,
+  or by building a matcher) before this data is listing-ready.
+- Every row is `needs_review=true` for that reason, so `push_to_shopify.py`
+  won't touch any of them until you clear that flag per row.
+- The sheet's Drive export loses tab names — there are 18 concatenated table
+  blocks in the file with no labels, including a second, diverged copy of
+  this same 78-row range with different statuses and prices. Confirm which
+  version is current against the live Google Sheet before trusting either
+  one beyond staging.
+- Two rows (`A4-MD-0051`, `A4-MD-0058`) have `Men's Tops` sitting in the photo
+  URL column — a data-entry bug in the source sheet, not a parsing error here.
+- A separate sheet, "Poshmark Agentic Inventory Command Sheet," is already
+  being actively worked by another agent ("Codex") with a different SKU
+  prefix (`A2-MD-` vs. this sheet's mix of `A1-/A2-/A4-MD-`... — yes, the
+  prefixes overlap in a way that suggests the two sheets may not agree on
+  numbering either). That sheet was deliberately left untouched.
+
+There's also an unrelated flag worth your attention: while parsing this
+sheet, a row in what looked like a "Goal/Ops tracker" area contained text
+structured like a command aimed at an AI agent reading the sheet. It was
+treated as inert data and not acted on, but you should look at that row
+yourself — a spreadsheet that other automation writes into is a place a
+stray or malicious instruction could end up.
+
 ## Self-correction built into the pipeline
 
 Two failure modes matter most for a 367-item batch: a bad row poisoning the
@@ -113,9 +147,13 @@ Supabase connection details for this project:
 - The `Media-state-engine` repo and the unrelated video/TTS content
   currently sitting on this repo's `main` branch — different project,
   untouched here.
-- A standalone storefront on Vercel — you confirmed Shopify is the
-  actual storefront; Supabase is staging only. If that changes, this
-  pipeline's output (clean Supabase rows) is exactly what a Vercel
-  frontend would read from anyway.
+- A "Magic Deal 007" or "Lost Light Productions" Vercel storefront. Neither
+  exists: the real brand name in your Drive/Sheets is **MagicDeals007**, and
+  your Vercel account has **zero deployed projects**. "Lost Light
+  Productions" doesn't match anything in your Drive — the closest name is
+  "Lost Things Studio," an unrelated animated kids'-show pilot, not a
+  storefront. If you want a MagicDeals007 storefront built on Vercel, that's
+  a real, separate project (design + hosting + data wiring) — say so
+  explicitly and it'll get scoped on its own, not smuggled in here.
 - Auto-publishing anything, on any schedule, without you reviewing it
   first.
