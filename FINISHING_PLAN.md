@@ -22,12 +22,14 @@
 | **Asset pipeline** | Stage 1 only | Prompt templates for 4 shot angles, no generation run |
 | **Deployment** | Not deployed | Needs Vercel + domain + env vars |
 
-### JayLeeFit Coaching — Data layer only, no website
+### JayLeeFit Coaching — Website built, not deployed
 
 | Area | Status |
 |---|---|
 | Airtable schema | Live base (`JayLeeFit Client Hub`), 5 tables, macro engine works |
-| Website | **Does not exist.** No pages, no components, no routes beyond the storefront |
+| Website (`jayleefit-website/`) | Builds clean. Home, About, Intake form → `/api/intake` → Airtable Clients table. Dark + gold theme. Needs `AIRTABLE_API_TOKEN` and a deploy |
+| Methodology site (`mao-methodology/`) | Exists (13 sections); not reviewed in this plan |
+| Testimonials | Home page shows "Our clients report" quotes — confirm these are real client words before launch, or remove them |
 | Telegram bot | Designed (n8n guide exists), not built |
 | ManyChat automation | Designed (docs/), not built |
 | Client app | Design brief exists, not built |
@@ -90,7 +92,7 @@ After the storefront is live and selling:
 |---|---|---|---|
 | 1 | **Wire Metricool** to the content engine architecture | 2-4 hrs | High — analytics already confirmed live |
 | 2 | **Create the Content Engine Airtable base** — Content Queue, Assets, Performance, AgentLog tables per ARCHITECTURE.md | 1-2 hrs | High — enables the whole pipeline |
-| 3 | **Build the JayLeeFit coaching website** — this is the third project, currently just a data layer with no web presence | 4-8 hrs | Medium — coaching business needs a landing page |
+| 3 | **Deploy the JayLeeFit coaching website** — `jayleefit-website/` is built; needs Airtable token, domain (jayleefit.com), and an end-to-end intake test | 1-2 hrs | High — this is the coaching business's front door |
 | 4 | **Run the image-gen pilot** — 5-10 items through asset-pipeline Stage 2, cost-preview first | 1-2 hrs | Medium — only after real photos are assigned |
 | 5 | **Wire Google Sheet writes** — either service account or move tracking to Airtable | 2-4 hrs | Medium — enables auto-marking items sold |
 | 6 | **Activate the content pipeline** — schedule first batch through the agent crew | 2-4 hrs | Lower — needs Airtable base + video gen credits |
@@ -103,7 +105,8 @@ Before work starts, these choices shape what gets built:
 
 1. **Deployment platform:** Vercel (recommended, Next.js native) vs. Railway vs. other?
 2. **Domain:** What domain for Old Light? (e.g., `oldlightgoods.com`, `shopoldlight.com`)
-3. **JayLeeFit website:** Same repo/domain, or separate? What does it need — landing page + booking, or a full coaching portal?
+3. **JayLeeFit website:** Deploy `jayleefit-website/` to jayleefit.com as-is, or add booking/payments first?
+6. **eBay path:** The storefront has both the Vendoo-hub route (current direction) and a replayed `lib/ebay-sync` Sell API CLI. Keep one.
 4. **Content engine priority:** Start building it now, or wait until storefront is live and selling?
 5. **Image generation budget:** How much Higgsfield credit to spend on the pilot batch? (~1.25 credits per 1K product image via `recraft_v4_1`)
 

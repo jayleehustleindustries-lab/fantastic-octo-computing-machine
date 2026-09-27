@@ -1,79 +1,79 @@
 @import "tailwindcss";
+@config "../tailwind.config.ts";
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+/* Unlayered CSS beats every Tailwind utility in v4, so custom rules must
+   live in a layer or they silently cancel classes like py-20 / text-accent. */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
 
-html {
-  scroll-behavior: smooth;
-}
+  body {
+    background-color: #0f0f0f;
+    color: #ffffff;
+  }
 
-body {
-  background-color: #0f0f0f;
-  color: #ffffff;
-}
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
 
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-button {
-  cursor: pointer;
-  font-family: inherit;
-}
-
-/* Smooth transitions */
-.transition-smooth {
-  transition: all 0.3s ease-in-out;
-}
-
-.btn-primary {
-  padding: 0.75rem 1.5rem;
-  background-color: #d4af37;
-  color: #0f0f0f;
-  font-weight: 600;
-  border-radius: 0.5rem;
-  transition: all 0.3s ease-in-out;
-}
-
-.btn-primary:hover {
-  background-color: #f5dfa8;
-}
-
-.btn-secondary {
-  padding: 0.75rem 1.5rem;
-  border: 1px solid #d4af37;
-  color: #d4af37;
-  border-radius: 0.5rem;
-  transition: all 0.3s ease-in-out;
-}
-
-.btn-secondary:hover {
-  background-color: #d4af37;
-  color: #0f0f0f;
-}
-
-.container-max {
-  max-width: 64rem;
-  margin-left: auto;
-  margin-right: auto;
-  padding-left: 1rem;
-  padding-right: 1rem;
-}
-
-@media (min-width: 640px) {
-  .container-max {
-    padding-left: 1.5rem;
-    padding-right: 1.5rem;
+  button {
+    cursor: pointer;
+    font-family: inherit;
   }
 }
 
-@media (min-width: 1024px) {
+@layer components {
+  .transition-smooth {
+    transition: all 0.3s ease-in-out;
+  }
+
+  .btn-primary {
+    padding: 0.75rem 1.5rem;
+    background-color: #d4af37;
+    color: #0f0f0f;
+    font-weight: 600;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease-in-out;
+  }
+
+  .btn-primary:hover {
+    background-color: #f5dfa8;
+  }
+
+  .btn-secondary {
+    padding: 0.75rem 1.5rem;
+    border: 1px solid #d4af37;
+    color: #d4af37;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease-in-out;
+  }
+
+  .btn-secondary:hover {
+    background-color: #d4af37;
+    color: #0f0f0f;
+  }
+
   .container-max {
-    padding-left: 2rem;
-    padding-right: 2rem;
+    max-width: 64rem;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  @media (min-width: 640px) {
+    .container-max {
+      padding-left: 1.5rem;
+      padding-right: 1.5rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .container-max {
+      padding-left: 2rem;
+      padding-right: 2rem;
+    }
   }
 }
