@@ -3,10 +3,23 @@ import "./globals.css";
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 
+const title = "JayLeeFit Coaching | Macro-Based Fitness Transformation";
+const description =
+  "Data-driven fitness coaching through transparent macro tracking and daily accountability. Transform your body with a system, not just promises.";
+
 export const metadata: Metadata = {
-  title: "JayLeeFit Coaching | Macro-Based Fitness Transformation",
-  description:
-    "Data-driven fitness coaching through transparent macro tracking and daily accountability. Transform your body with a system, not just promises.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://jayleefit.com"),
+  title,
+  description,
+  alternates: { canonical: "/" },
+  openGraph: {
+    title,
+    description,
+    url: "/",
+    siteName: "JayLeeFit",
+    type: "website",
+  },
+  twitter: { card: "summary", title, description },
 };
 
 export default function RootLayout({

@@ -37,7 +37,7 @@ cp .env.example .env.local
 ```env
 AIRTABLE_API_TOKEN=pat_YOUR_TOKEN
 AIRTABLE_BASE_ID=appN8QFsoWJ1fJhxC
-AIRTABLE_CLIENTS_TABLE=Clients
+AIRTABLE_LEADS_TABLE=Lead Pipeline
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 NEXT_PUBLIC_SHOW_STOREFRONT_PROMO=true
 NEXT_PUBLIC_STOREFRONT_URL=https://oldlight.shop
@@ -138,7 +138,7 @@ Zod schema in `lib/form-validation.ts` defines required/optional fields and erro
 
 - Check `AIRTABLE_API_TOKEN` is valid (starts with `pat_`)
 - Confirm `AIRTABLE_BASE_ID` matches your base URL
-- Verify table name in `AIRTABLE_CLIENTS_TABLE` (exact case match)
+- Verify table name in `AIRTABLE_LEADS_TABLE` (exact case match)
 - Ensure the Airtable API token has write access to the base
 
 ### Form submission hangs
@@ -158,7 +158,7 @@ Zod schema in `lib/form-validation.ts` defines required/optional fields and erro
 |---|---|---|---|
 | `AIRTABLE_API_TOKEN` | Yes | String | Airtable personal access token (pat_...) |
 | `AIRTABLE_BASE_ID` | Yes | String | JayLeeFit base ID (app...) |
-| `AIRTABLE_CLIENTS_TABLE` | Yes | String | Table name to write intake data |
+| `AIRTABLE_LEADS_TABLE` | No | String | Table intakes are written to (default `Lead Pipeline`) |
 | `NEXT_PUBLIC_SITE_URL` | Yes | URL | Base domain (used for Stripe redirects, etc.) |
 | `NEXT_PUBLIC_SHOW_STOREFRONT_PROMO` | No | Boolean | Show Old Light promo in footer (true/false) |
 | `NEXT_PUBLIC_STOREFRONT_URL` | No | URL | Link to Old Light storefront |
