@@ -55,7 +55,7 @@ describe("site.capabilities", () => {
     const caller = appRouter.createCaller(createPublicContext());
     const result = await caller.site.capabilities();
     expect(result).toEqual({
-      applicationIntake: Boolean(process.env.DATABASE_URL),
+      applicationIntake: Boolean(process.env.AIRTABLE_API_TOKEN && process.env.AIRTABLE_BASE_ID),
       paymentReporting: Boolean(process.env.DATABASE_URL),
       aiBlueprints: Boolean(process.env.BUILT_IN_FORGE_API_URL && process.env.BUILT_IN_FORGE_API_KEY),
     });

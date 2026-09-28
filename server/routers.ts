@@ -5,6 +5,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
 import { invokeLLM } from "./_core/llm";
 import { ENV } from "./_core/env";
+import { airtableConfigured } from "./airtable";
 import {
   upsertApplication,
   getApplicationByEmail,
@@ -29,7 +30,7 @@ End with: "This is a sample blueprint. Your full MAO program is built after qual
 export const appRouter = router({
   site: router({
     capabilities: publicProcedure.query(() => ({
-      applicationIntake: Boolean(process.env.DATABASE_URL),
+      applicationIntake: airtableConfigured(),
       paymentReporting: Boolean(process.env.DATABASE_URL),
       aiBlueprints: Boolean(ENV.forgeApiUrl && ENV.forgeApiKey),
     })),

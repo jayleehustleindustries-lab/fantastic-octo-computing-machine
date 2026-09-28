@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { InsertUser, users, applications, aiPlans, paymentReports } from "../drizzle/schema";
 import { ENV } from './_core/env';
+import { createLead, findLeadByEmail, formatPhase, funnelStageFor, mergePhaseNotes, updateLead } from "./airtable";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -101,19 +102,26 @@ export async function upsertApplication(email: string, patch: Partial<{
   phase4Json: string;
   completedAt: Date;
 }>) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
+  const phase = ([1, 2, 3, 4] as const).find(n => patch[`phase${n}Json`] !== undefined);
+  if (!phase) throw new Error("Application patch has no phase answers");
 
-  const existing = await db.select().from(applications).where(eq(applications.email, email)).limit(1);
-  if (existing.length > 0) {
-    await db.update(applications).set(patch).where(eq(applications.email, email));
-    const updated = await db.select().from(applications).where(eq(applications.email, email)).limit(1);
-    return updated[0];
-  } else {
-    await db.insert(applications).values({ email, ...patch });
-    const inserted = await db.select().from(applications).where(eq(applications.email, email)).limit(1);
-    return inserted[0];
-  }
+  const block = formatPhase(phase, JSON.parse(patch[`phase${phase}Json`]!));
+  const existing = await findLeadByEmail(email);
+  const { notes, furthest } = mergePhaseNotes(String(existing?.fields.Notes ?? ""), phase, block);
+
+  const fields: Record<string, unknown> = {
+    Notes: notes,
+    "Funnel Stage": funnelStageFor(furthest),
+  };
+  if (patch.fullName) fields["Lead Name"] = patch.fullName;
+
+  if (existing) return updateLead(existing.id, fields);
+  return createLead({
+    ...fields,
+    Email: email,
+    Source: "jayleefit.com MAO application",
+    "Created Date": new Date().toISOString().slice(0, 10),
+  });
 }
 
 export async function getApplicationByEmail(email: string) {
