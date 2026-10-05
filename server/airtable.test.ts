@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { upsertApplication } from "./db";
+import { createPaymentReport, upsertApplication } from "./db";
 import { mergePhaseNotes } from "./airtable";
 
 type Call = { url: string; rawUrl: string; method: string; body: any };
@@ -98,5 +98,35 @@ describe("mergePhaseNotes", () => {
     const again = mergePhaseNotes(first.notes, 1, "── Phase 1 — Identity ──\nFull name: B");
     expect(again.notes).toBe("── Phase 1 — Identity ──\nFull name: B");
     expect(again.furthest).toBe(1);
+  });
+});
+
+describe("createPaymentReport → Airtable Payment Reports", () => {
+  it("files the report for manual review in its own table", async () => {
+    mockAirtable(null);
+    await createPaymentReport({
+      name: "Test Operator",
+      email: "op@test.com",
+      amount: "500.00",
+      orderId: "ORD-001",
+      transactionId: "TXN-ABC123",
+    });
+
+    expect(calls).toHaveLength(1);
+    expect(calls[0].method).toBe("POST");
+    expect(calls[0].url).toContain("/appTEST/Payment Reports");
+    expect(calls[0].body.typecast).toBe(true);
+    const fields = calls[0].body.records[0].fields;
+    expect(fields).toMatchObject({
+      Name: "Test Operator",
+      Email: "op@test.com",
+      Method: "PayPal",
+      Amount: "500.00",
+      "Order ID": "ORD-001",
+      "Transaction ID": "TXN-ABC123",
+      Status: "Needs review",
+    });
+    expect(fields["Reported Date"]).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(fields).not.toHaveProperty("Note");
   });
 });

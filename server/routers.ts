@@ -1,11 +1,11 @@
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
-import { invokeLLM } from "./_core/llm";
-import { ENV } from "./_core/env";
 import { airtableConfigured } from "./airtable";
+import { claudeConfigured, generateBlueprint, takeBlueprintSlot } from "./claude";
 import {
   upsertApplication,
   getApplicationByEmail,
@@ -27,13 +27,18 @@ const MAO_SYSTEM_PROMPT = `You are the MAO Engine, the AI programming assistant 
 4) GUARDRAILS — 3 short rules on nutrition, recovery, and consistency.
 End with: "This is a sample blueprint. Your full MAO program is built after qualification. — MAO ENGINE". Keep it under 600 words. Never give medical advice; advise consulting a professional for injuries.`;
 
+/** What the site can do in this deployment. Also served at /api/health. */
+export function siteCapabilities() {
+  return {
+    applicationIntake: airtableConfigured(),
+    paymentReporting: airtableConfigured(),
+    aiBlueprints: claudeConfigured(),
+  };
+}
+
 export const appRouter = router({
   site: router({
-    capabilities: publicProcedure.query(() => ({
-      applicationIntake: airtableConfigured(),
-      paymentReporting: Boolean(process.env.DATABASE_URL),
-      aiBlueprints: Boolean(ENV.forgeApiUrl && ENV.forgeApiKey),
-    })),
+    capabilities: publicProcedure.query(() => siteCapabilities()),
   }),
   system: systemRouter,
   auth: router({
@@ -128,7 +133,14 @@ export const appRouter = router({
         focusArea: z.string().optional(),
         limitations: z.string().optional(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
+        if (!takeBlueprintSlot(ctx.req.ip || "unknown")) {
+          throw new TRPCError({
+            code: "TOO_MANY_REQUESTS",
+            message: "You've generated 5 sample plans this hour. Try again later, or apply for your full program.",
+          });
+        }
+
         const userMessage = [
           `Name: ${input.name ?? "Operator"}`,
           `Goals: ${input.goals}`,
@@ -138,19 +150,7 @@ export const appRouter = router({
           input.limitations ? `Injuries/Limitations: ${input.limitations}` : null,
         ].filter(Boolean).join("\n");
 
-        const result = await invokeLLM({
-          messages: [
-            { role: "system", content: MAO_SYSTEM_PROMPT },
-            { role: "user", content: userMessage },
-          ],
-          model: "claude-sonnet-4-5",
-          maxTokens: 1200,
-        });
-
-        const firstChoice = result.choices?.[0];
-        const planOutput = typeof firstChoice?.message?.content === "string"
-          ? firstChoice.message.content
-          : "Error generating plan. Please try again.";
+        const planOutput = await generateBlueprint(MAO_SYSTEM_PROMPT, userMessage);
 
         // Persist to DB
         await createAiPlan({

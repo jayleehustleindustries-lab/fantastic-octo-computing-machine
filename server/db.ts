@@ -1,8 +1,8 @@
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, applications, aiPlans, paymentReports } from "../drizzle/schema";
+import { InsertUser, users, applications, aiPlans } from "../drizzle/schema";
 import { ENV } from './_core/env';
-import { createLead, findLeadByEmail, formatPhase, funnelStageFor, mergePhaseNotes, updateLead } from "./airtable";
+import { createLead, createPaymentReport as createAirtablePaymentReport, findLeadByEmail, formatPhase, funnelStageFor, mergePhaseNotes, updateLead } from "./airtable";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -163,11 +163,7 @@ export async function createPaymentReport(data: {
   transactionId: string;
   note?: string;
 }) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.insert(paymentReports).values(data);
-  const all = await db.select().from(paymentReports);
-  return all[all.length - 1];
+  return createAirtablePaymentReport(data);
 }
 
 // TODO: add feature queries here as your schema grows.

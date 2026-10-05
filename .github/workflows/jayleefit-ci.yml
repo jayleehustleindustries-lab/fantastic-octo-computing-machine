@@ -2,7 +2,7 @@ name: JayLeeFit CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, jayleefit-launch, staging]
   pull_request:
   workflow_dispatch:
 

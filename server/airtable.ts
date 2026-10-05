@@ -13,12 +13,15 @@ export function airtableConfigured(): boolean {
 
 type AirtableRecord = { id: string; fields: Record<string, unknown> };
 
-async function airtable(path: string, init: RequestInit = {}): Promise<any> {
+const leadsTable = () => process.env.AIRTABLE_LEADS_TABLE || "Lead Pipeline";
+const paymentsTable = () => process.env.AIRTABLE_PAYMENTS_TABLE || "Payment Reports";
+
+async function airtable(path: string, init: RequestInit = {}, tableName = leadsTable()): Promise<any> {
   const token = process.env.AIRTABLE_API_TOKEN;
   const baseId = process.env.AIRTABLE_BASE_ID;
   if (!token || !baseId) throw new Error("Airtable is not configured");
 
-  const table = encodeURIComponent(process.env.AIRTABLE_LEADS_TABLE || "Lead Pipeline");
+  const table = encodeURIComponent(tableName);
   const response = await fetch(`${AIRTABLE_API}/${baseId}/${table}${path}`, {
     ...init,
     headers: {
@@ -52,6 +55,42 @@ export async function createLead(fields: Record<string, unknown>): Promise<Airta
 
 export async function updateLead(id: string, fields: Record<string, unknown>): Promise<AirtableRecord> {
   const data = await airtable("", { method: "PATCH", body: JSON.stringify({ records: [{ id, fields }] }) });
+  return data.records[0];
+}
+
+// ── Payment reports ─────────────────────────────────────────────────────────
+
+export type PaymentReport = {
+  name: string;
+  email: string;
+  method?: string;
+  amount: string;
+  orderId: string;
+  transactionId: string;
+  note?: string;
+};
+
+/**
+ * Self-reported payments land in their own table for manual review against
+ * PayPal. Nothing here verifies the payment; Status starts at "Needs review".
+ */
+export async function createPaymentReport(report: PaymentReport): Promise<AirtableRecord> {
+  const fields: Record<string, unknown> = {
+    Name: report.name,
+    Email: report.email,
+    Method: report.method || "PayPal",
+    Amount: report.amount,
+    "Order ID": report.orderId,
+    "Transaction ID": report.transactionId,
+    "Reported Date": new Date().toISOString().slice(0, 10),
+    Status: "Needs review",
+  };
+  if (report.note) fields.Note = report.note;
+  const data = await airtable(
+    "",
+    { method: "POST", body: JSON.stringify({ records: [{ fields }], typecast: true }) },
+    paymentsTable(),
+  );
   return data.records[0];
 }
 

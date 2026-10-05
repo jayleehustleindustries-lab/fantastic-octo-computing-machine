@@ -8,11 +8,10 @@ vi.mock("./db", () => ({
   createPaymentReport: vi.fn().mockResolvedValue({ id: 1 }),
 }));
 
-// ── Mock the LLM so tests don't make real API calls ──────────────────────────
-vi.mock("./_core/llm", () => ({
-  invokeLLM: vi.fn().mockResolvedValue({
-    choices: [{ message: { content: "## OPERATOR READOUT\nTest plan generated." } }],
-  }),
+// ── Mock the Claude call so tests don't make real API calls ──────────────────
+vi.mock("./claude", async importOriginal => ({
+  ...(await importOriginal<typeof import("./claude")>()),
+  generateBlueprint: vi.fn().mockResolvedValue("## OPERATOR READOUT\nTest plan generated."),
 }));
 
 import { appRouter } from "./routers";
@@ -56,11 +55,10 @@ describe("site.capabilities", () => {
     const result = await caller.site.capabilities();
     expect(result).toEqual({
       applicationIntake: Boolean(process.env.AIRTABLE_API_TOKEN && process.env.AIRTABLE_BASE_ID),
-      paymentReporting: Boolean(process.env.DATABASE_URL),
-      aiBlueprints: Boolean(process.env.BUILT_IN_FORGE_API_URL && process.env.BUILT_IN_FORGE_API_KEY),
+      paymentReporting: Boolean(process.env.AIRTABLE_API_TOKEN && process.env.AIRTABLE_BASE_ID),
+      aiBlueprints: Boolean(process.env.ANTHROPIC_API_KEY),
     });
-    expect(result).not.toHaveProperty("databaseUrl");
-    expect(result).not.toHaveProperty("forgeApiKey");
+    expect(Object.values(result).every(v => typeof v === "boolean")).toBe(true);
   });
 });
 
