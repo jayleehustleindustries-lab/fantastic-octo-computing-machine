@@ -2,6 +2,10 @@ import { useState, useEffect, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import ReactMarkdown from "react-markdown";
 import { ProgramArchitect } from "@/components/ProgramArchitect";
+import { AgentModule } from "@/components/hud/AgentModule";
+import { BootLine } from "@/components/hud/BootLine";
+import { HudBackdrop } from "@/components/hud/HudBackdrop";
+import { HudReticle } from "@/components/hud/HudReticle";
 
 // ── Versioned campaign assets served with the application ──────────────────
 const ASSETS = {
@@ -110,18 +114,18 @@ function Nav({ activeSection }: { activeSection: string }) {
     { label: "PAY INVOICE", href: "#pay-invoice" },
   ];
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0A0A0B]/95 backdrop-blur border-b border-white/10">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-hud/20">
       <div className="max-w-7xl mx-auto px-4 flex items-center justify-between h-14">
-        <a href="#" className="font-['Bebas_Neue'] text-xl tracking-widest text-white">JAYLEE FIT</a>
+        <a href="#" className="flex items-center gap-2 font-['Chakra_Petch'] font-semibold text-base tracking-[0.25em] text-white"><span aria-hidden="true" className="h-2 w-2 rotate-45 border border-hud bg-hud/30" />JAYLEE FIT</a>
         {/* Desktop nav */}
         <div className="hidden lg:flex items-center gap-5">
           {links.map(l => (
             <a key={l.href} href={l.href}
-              className={`font-['JetBrains_Mono'] text-[10px] tracking-widest transition-colors ${activeSection === l.href.slice(1) ? 'text-red-500' : 'text-white/60 hover:text-white'}`}>
+              className={`font-['JetBrains_Mono'] text-[10px] tracking-widest transition-colors ${activeSection === l.href.slice(1) ? 'text-hud' : 'text-white/60 hover:text-white'}`}>
               {l.label}
             </a>
           ))}
-          <a href="#apply" className="ml-2 px-3 py-1.5 bg-red-600 text-white font-['JetBrains_Mono'] text-[10px] tracking-widest hover:bg-red-500 transition-colors">
+          <a href="#apply" className="ml-2 px-3 py-1.5 bg-hud-deep text-white font-['JetBrains_Mono'] text-[10px] tracking-widest hover:bg-[#1f54e6] hover:shadow-[0_0_24px_rgb(56_198_255/0.45)] transition-colors">
             APPLY
           </a>
         </div>
@@ -134,15 +138,15 @@ function Nav({ activeSection }: { activeSection: string }) {
       </div>
       {/* Mobile overlay */}
       {menuOpen && (
-        <div id="mobile-navigation" className="lg:hidden fixed inset-0 top-14 bg-[#0A0A0B] z-40 flex flex-col items-center justify-center gap-6">
+        <div id="mobile-navigation" className="lg:hidden fixed inset-0 top-14 bg-background z-40 flex flex-col items-center justify-center gap-6">
           {links.map(l => (
             <a key={l.href} href={l.href} onClick={() => setMenuOpen(false)}
-              className="font-['JetBrains_Mono'] text-lg tracking-widest text-white/80 hover:text-red-500 transition-colors">
+              className="font-['JetBrains_Mono'] text-lg tracking-widest text-white/80 hover:text-hud transition-colors">
               {l.label}
             </a>
           ))}
           <a href="#apply" onClick={() => setMenuOpen(false)}
-            className="mt-4 px-6 py-3 bg-red-600 text-white font-['JetBrains_Mono'] text-sm tracking-widest">
+            className="mt-4 px-6 py-3 bg-hud-deep text-white font-['JetBrains_Mono'] text-sm tracking-widest">
             APPLY NOW
           </a>
         </div>
@@ -155,13 +159,30 @@ function Nav({ activeSection }: { activeSection: string }) {
 function Section({ id, index, title, children, className = "" }: {
   id: string; index: string; title: string; children: React.ReactNode; className?: string;
 }) {
+  // The blue rail draws in when the header first scrolls into view; the grey
+  // rail underneath is always there, so nothing waits hidden.
+  const railRef = useRef<HTMLDivElement>(null);
+  const [seen, setSeen] = useState(false);
+  useEffect(() => {
+    const el = railRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") { setSeen(true); return; }
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) { setSeen(true); observer.disconnect(); }
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
   return (
-    <section id={id} className={`py-20 scroll-mt-14 ${className}`}>
+    <section id={id} className={`py-20 scroll-mt-14 relative ${className}`}>
       <div className="max-w-6xl mx-auto px-4">
-        <div className="flex items-center gap-4 mb-10">
-          <span className="font-['JetBrains_Mono'] text-xs text-red-500 tracking-widest">{index}</span>
-          <div className="flex-1 h-px bg-white/10" />
-          <span className="font-['Bebas_Neue'] text-3xl md:text-4xl tracking-widest text-white">{title}</span>
+        <div className="mb-10">
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="border border-hud/40 bg-hud/10 px-2 py-0.5 font-['JetBrains_Mono'] text-[10px] text-hud tracking-widest">{index}</span>
+            <h2 className="font-['Chakra_Petch'] font-semibold text-2xl md:text-3xl tracking-[0.12em] text-white">{title}</h2>
+          </div>
+          <div ref={railRef} className="relative mt-3 h-px overflow-hidden bg-white/10">
+            <div className={`absolute inset-0 origin-left bg-gradient-to-r from-hud via-hud/40 to-transparent ${seen ? "hud-draw" : "scale-x-0"}`} />
+          </div>
         </div>
         {children}
       </div>
@@ -192,7 +213,7 @@ function ApplyForm({ onQualified }: { onQualified: (pricing: Record<string, stri
   const phase4Mut = trpc.application.submitPhase4.useMutation();
   const applicationError = phase1Mut.error ?? phase2Mut.error ?? phase3Mut.error ?? phase4Mut.error;
 
-  const inputCls = "w-full bg-white/5 border border-white/20 text-white font-['JetBrains_Mono'] text-sm px-3 py-2 focus:outline-none focus:border-red-500 transition-colors placeholder:text-white/30";
+  const inputCls = "w-full bg-white/5 border border-white/20 text-white font-['JetBrains_Mono'] text-sm px-3 py-2 focus:outline-none focus:border-hud transition-colors placeholder:text-white/30";
   const labelCls = "block font-['JetBrains_Mono'] text-xs tracking-widest text-white/60 mb-1";
   const selectCls = `${inputCls} appearance-none`;
 
@@ -221,10 +242,10 @@ function ApplyForm({ onQualified }: { onQualified: (pricing: Record<string, stri
   if (done) {
     return (
       <div className="text-center py-16">
-        <div className="font-['JetBrains_Mono'] text-xs text-red-500 tracking-widest mb-4">// APPLICATION RECEIVED</div>
+        <div className="font-['JetBrains_Mono'] text-xs text-hud tracking-widest mb-4">// APPLICATION RECEIVED</div>
         <div className="font-['Bebas_Neue'] text-4xl text-white mb-4">QUALIFICATION COMPLETE</div>
         <p className="font-['JetBrains_Mono'] text-sm text-white/60 mb-8">Your application is queued for Coach Jay's review. Investment packages are now unlocked.</p>
-        <a href="#investment" className="inline-block px-6 py-3 bg-red-600 text-white font-['JetBrains_Mono'] text-xs tracking-widest hover:bg-red-500 transition-colors">
+        <a href="#investment" className="inline-block px-6 py-3 bg-hud-deep text-white font-['JetBrains_Mono'] text-xs tracking-widest hover:bg-[#1f54e6] hover:shadow-[0_0_24px_rgb(56_198_255/0.45)] transition-colors">
           VIEW INVESTMENT PACKAGES →
         </a>
       </div>
@@ -236,7 +257,7 @@ function ApplyForm({ onQualified }: { onQualified: (pricing: Record<string, stri
       {/* Stepper */}
       <div className="flex gap-2 mb-8">
         {[1,2,3,4].map(n => (
-          <div key={n} className={`flex-1 h-1 ${n <= phase ? 'bg-red-600' : 'bg-white/10'} transition-colors`} />
+          <div key={n} className={`flex-1 h-1 ${n <= phase ? 'bg-hud-deep' : 'bg-white/10'} transition-colors`} />
         ))}
       </div>
       <div className="font-['JetBrains_Mono'] text-xs text-white/40 tracking-widest mb-6">
@@ -248,7 +269,7 @@ function ApplyForm({ onQualified }: { onQualified: (pricing: Record<string, stri
         </div>
       )}
       {applicationError && (
-        <p className="mb-5 font-['JetBrains_Mono'] text-xs text-red-400">SUBMISSION ERROR: {applicationError.message}</p>
+        <p className="mb-5 font-['JetBrains_Mono'] text-xs text-destructive">SUBMISSION ERROR: {applicationError.message}</p>
       )}
 
       {/* Phase 1 */}
@@ -281,7 +302,7 @@ function ApplyForm({ onQualified }: { onQualified: (pricing: Record<string, stri
             <p className="font-['JetBrains_Mono'] text-xs text-white/30 mt-1">City, state, timezone. Check-ins and Zoom calls are scheduled around it.</p>
           </div>
           <button onClick={handlePhase1} disabled={phase1Mut.isPending || !intakeAvailable}
-            className="w-full py-3 bg-red-600 text-white font-['JetBrains_Mono'] text-xs tracking-widest hover:bg-red-500 transition-colors disabled:opacity-50">
+            className="w-full py-3 bg-hud-deep text-white font-['JetBrains_Mono'] text-xs tracking-widest hover:bg-[#1f54e6] hover:shadow-[0_0_24px_rgb(56_198_255/0.45)] transition-colors disabled:opacity-50">
             {phase1Mut.isPending ? "PROCESSING..." : "NEXT PHASE →"}
           </button>
         </div>
@@ -322,7 +343,7 @@ function ApplyForm({ onQualified }: { onQualified: (pricing: Record<string, stri
               value={p2.currentStats} onChange={e => setP2({...p2, currentStats: e.target.value})} />
           </div>
           <button onClick={handlePhase2} disabled={phase2Mut.isPending || !intakeAvailable}
-            className="w-full py-3 bg-red-600 text-white font-['JetBrains_Mono'] text-xs tracking-widest hover:bg-red-500 transition-colors disabled:opacity-50">
+            className="w-full py-3 bg-hud-deep text-white font-['JetBrains_Mono'] text-xs tracking-widest hover:bg-[#1f54e6] hover:shadow-[0_0_24px_rgb(56_198_255/0.45)] transition-colors disabled:opacity-50">
             {phase2Mut.isPending ? "PROCESSING..." : "NEXT PHASE →"}
           </button>
         </div>
@@ -364,7 +385,7 @@ function ApplyForm({ onQualified }: { onQualified: (pricing: Record<string, stri
                 <label key={opt} className="flex items-center gap-2 cursor-pointer">
                   <input type="radio" name="willLog" value={opt}
                     checked={p3.willLog === opt} onChange={() => setP3({...p3, willLog: opt})}
-                    className="accent-red-600" />
+                    className="accent-hud-deep" />
                   <span className="font-['JetBrains_Mono'] text-xs text-white/70">{opt}</span>
                 </label>
               ))}
@@ -372,7 +393,7 @@ function ApplyForm({ onQualified }: { onQualified: (pricing: Record<string, stri
             <p className="font-['JetBrains_Mono'] text-xs text-white/30 mt-1">The Accountability Loop only works if you feed it. 'No' does not disqualify you, but say it now.</p>
           </div>
           <button onClick={handlePhase3} disabled={phase3Mut.isPending || !intakeAvailable}
-            className="w-full py-3 bg-red-600 text-white font-['JetBrains_Mono'] text-xs tracking-widest hover:bg-red-500 transition-colors disabled:opacity-50">
+            className="w-full py-3 bg-hud-deep text-white font-['JetBrains_Mono'] text-xs tracking-widest hover:bg-[#1f54e6] hover:shadow-[0_0_24px_rgb(56_198_255/0.45)] transition-colors disabled:opacity-50">
             {phase3Mut.isPending ? "PROCESSING..." : "NEXT PHASE →"}
           </button>
         </div>
@@ -399,16 +420,16 @@ function ApplyForm({ onQualified }: { onQualified: (pricing: Record<string, stri
           </div>
           <label className="flex items-start gap-3 cursor-pointer">
             <input type="checkbox" checked={p4.investmentAck} onChange={e => setP4({...p4, investmentAck: e.target.checked})}
-              className="mt-0.5 accent-red-600" />
+              className="mt-0.5 accent-hud-deep" />
             <span className="font-['JetBrains_Mono'] text-xs text-white/70">I understand MAO packages are premium coaching investments, not subscriptions, and pricing is revealed after qualification.</span>
           </label>
           <label className="flex items-start gap-3 cursor-pointer">
             <input type="checkbox" checked={p4.reviewAgreement} onChange={e => setP4({...p4, reviewAgreement: e.target.checked})}
-              className="mt-0.5 accent-red-600" />
+              className="mt-0.5 accent-hud-deep" />
             <span className="font-['JetBrains_Mono'] text-xs text-white/70">I understand this application will be reviewed and submission does not guarantee acceptance.</span>
           </label>
           <button onClick={handlePhase4} disabled={phase4Mut.isPending || !intakeAvailable}
-            className="w-full py-3 bg-red-600 text-white font-['JetBrains_Mono'] text-xs tracking-widest hover:bg-red-500 transition-colors disabled:opacity-50">
+            className="w-full py-3 bg-hud-deep text-white font-['JetBrains_Mono'] text-xs tracking-widest hover:bg-[#1f54e6] hover:shadow-[0_0_24px_rgb(56_198_255/0.45)] transition-colors disabled:opacity-50">
             {phase4Mut.isPending ? "PROCESSING..." : "COMPLETE QUALIFICATION →"}
           </button>
         </div>
@@ -451,7 +472,7 @@ function AIEngine() {
       <div className="space-y-8">
         {/* Rapid Diagnostic */}
         <div className="border border-white/10 p-6">
-          <div className="font-['JetBrains_Mono'] text-xs text-red-500 tracking-widest mb-1">MAO ENGINE // 3-QUESTION DIAGNOSTIC</div>
+          <div className="font-['JetBrains_Mono'] text-xs text-hud tracking-widest mb-1">MAO ENGINE // 3-QUESTION DIAGNOSTIC</div>
           <div className="font-['Bebas_Neue'] text-2xl text-white mb-1">3 QUESTIONS. ROUTED IN 90 SECONDS.</div>
           <p className="font-['JetBrains_Mono'] text-xs text-white/50 mb-5">Three rapid-fire questions. The MAO Engine routes your goal, archetype, and time commitment into a recommended track — then unlocks the deep AI Blueprint generator below. No fluff. No 6-page form. Pull the trigger.</p>
           <div className="space-y-4">
@@ -465,7 +486,7 @@ function AIEngine() {
                 <div className="flex flex-wrap gap-2">
                   {opts.map(opt => (
                     <button key={opt} onClick={() => setDiagnostic(d => ({ ...d, [key]: opt }))}
-                      className={`px-3 py-1.5 font-['JetBrains_Mono'] text-[10px] tracking-wider border transition-colors ${diagnostic[key as keyof typeof diagnostic] === opt ? 'bg-red-600 border-red-600 text-white' : 'border-white/20 text-white/60 hover:border-white/40'}`}>
+                      className={`px-3 py-1.5 font-['JetBrains_Mono'] text-[10px] tracking-wider border transition-colors ${diagnostic[key as keyof typeof diagnostic] === opt ? 'bg-hud-deep border-hud text-white' : 'border-white/20 text-white/60 hover:border-white/40'}`}>
                       {opt}
                     </button>
                   ))}
@@ -473,15 +494,15 @@ function AIEngine() {
               </div>
             ))}
             <button onClick={runDiagnostic}
-              className="w-full py-2.5 bg-red-600 text-white font-['JetBrains_Mono'] text-xs tracking-widest hover:bg-red-500 transition-colors">
+              className="w-full py-2.5 bg-hud-deep text-white font-['JetBrains_Mono'] text-xs tracking-widest hover:bg-[#1f54e6] hover:shadow-[0_0_24px_rgb(56_198_255/0.45)] transition-colors">
               RUN DIAGNOSTIC →
             </button>
           </div>
           {routeResult && (
-            <div className="mt-5 border border-red-600/40 p-4 bg-red-600/5">
-              <div className="font-['JetBrains_Mono'] text-xs text-red-500 mb-1">ROUTED // RECOMMENDED TRACK: {routeResult.tier}</div>
+            <div className="mt-5 border border-hud/40 p-4 bg-hud-deep/5">
+              <div className="font-['JetBrains_Mono'] text-xs text-hud mb-1">ROUTED // RECOMMENDED TRACK: {routeResult.tier}</div>
               <p className="font-['JetBrains_Mono'] text-xs text-white/70 mb-3">{routeResult.rationale}</p>
-              <a href="#apply" className="font-['JetBrains_Mono'] text-xs text-red-400 hover:text-red-300 tracking-widest">
+              <a href="#apply" className="font-['JetBrains_Mono'] text-xs text-hud hover:text-white tracking-widest">
                 APPLY FOR {routeResult.tier} →
               </a>
             </div>
@@ -491,7 +512,7 @@ function AIEngine() {
         {/* Deep Blueprint form */}
         {showBlueprint && (
           <div className="border border-white/10 p-6 min-w-0">
-            <div className="font-['JetBrains_Mono'] text-xs text-red-500 tracking-widest mb-1">DEEP BLUEPRINT // AI POWERED ENGINE</div>
+            <div className="font-['JetBrains_Mono'] text-xs text-hud tracking-widest mb-1">DEEP BLUEPRINT // AI POWERED ENGINE</div>
             <div className="font-['Bebas_Neue'] text-2xl text-white mb-4">GENERATE YOUR BLUEPRINT</div>
             {!capabilities.isPending && !aiAvailable && (
               <div className="mb-4 border border-amber-400/40 bg-amber-400/5 p-3 font-['JetBrains_Mono'] text-xs text-amber-200">
@@ -501,17 +522,17 @@ function AIEngine() {
             <div className="space-y-4">
               <div>
                 <label className="block font-['JetBrains_Mono'] text-xs tracking-widest text-white/60 mb-1">NAME (OPTIONAL)</label>
-                <input type="text" className="w-full bg-white/5 border border-white/20 text-white font-['JetBrains_Mono'] text-sm px-3 py-2 focus:outline-none focus:border-red-500 transition-colors placeholder:text-white/30"
+                <input type="text" className="w-full bg-white/5 border border-white/20 text-white font-['JetBrains_Mono'] text-sm px-3 py-2 focus:outline-none focus:border-hud transition-colors placeholder:text-white/30"
                   value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
               </div>
               <div>
                 <label className="block font-['JetBrains_Mono'] text-xs tracking-widest text-white/60 mb-1">PRIMARY GOALS *</label>
-                <textarea className="w-full bg-white/5 border border-white/20 text-white font-['JetBrains_Mono'] text-sm px-3 py-2 focus:outline-none focus:border-red-500 h-20 resize-none placeholder:text-white/30"
+                <textarea className="w-full bg-white/5 border border-white/20 text-white font-['JetBrains_Mono'] text-sm px-3 py-2 focus:outline-none focus:border-hud h-20 resize-none placeholder:text-white/30"
                   value={form.goals} onChange={e => setForm({...form, goals: e.target.value})} required />
               </div>
               <div>
                 <label className="block font-['JetBrains_Mono'] text-xs tracking-widest text-white/60 mb-1">FITNESS LEVEL *</label>
-                <select className="w-full bg-white/5 border border-white/20 text-white font-['JetBrains_Mono'] text-sm px-3 py-2 focus:outline-none focus:border-red-500"
+                <select className="w-full bg-white/5 border border-white/20 text-white font-['JetBrains_Mono'] text-sm px-3 py-2 focus:outline-none focus:border-hud"
                   value={form.fitnessLevel} onChange={e => setForm({...form, fitnessLevel: e.target.value})}>
                   <option value="Beginner">Beginner</option>
                   <option value="Intermediate">Intermediate</option>
@@ -520,23 +541,23 @@ function AIEngine() {
               </div>
               <div>
                 <label className="block font-['JetBrains_Mono'] text-xs tracking-widest text-white/60 mb-1">AVAILABILITY *</label>
-                <input type="text" className="w-full bg-white/5 border border-white/20 text-white font-['JetBrains_Mono'] text-sm px-3 py-2 focus:outline-none focus:border-red-500 placeholder:text-white/30"
+                <input type="text" className="w-full bg-white/5 border border-white/20 text-white font-['JetBrains_Mono'] text-sm px-3 py-2 focus:outline-none focus:border-hud placeholder:text-white/30"
                   placeholder="e.g. 5 days/week, 60 min sessions"
                   value={form.availability} onChange={e => setForm({...form, availability: e.target.value})} required />
               </div>
               <div>
                 <label className="block font-['JetBrains_Mono'] text-xs tracking-widest text-white/60 mb-1">FOCUS AREA (OPTIONAL)</label>
-                <input type="text" className="w-full bg-white/5 border border-white/20 text-white font-['JetBrains_Mono'] text-sm px-3 py-2 focus:outline-none focus:border-red-500 placeholder:text-white/30"
+                <input type="text" className="w-full bg-white/5 border border-white/20 text-white font-['JetBrains_Mono'] text-sm px-3 py-2 focus:outline-none focus:border-hud placeholder:text-white/30"
                   value={form.focusArea} onChange={e => setForm({...form, focusArea: e.target.value})} />
               </div>
               <div>
                 <label className="block font-['JetBrains_Mono'] text-xs tracking-widest text-white/60 mb-1">INJURIES / LIMITATIONS (OPTIONAL)</label>
-                <input type="text" className="w-full bg-white/5 border border-white/20 text-white font-['JetBrains_Mono'] text-sm px-3 py-2 focus:outline-none focus:border-red-500 placeholder:text-white/30"
+                <input type="text" className="w-full bg-white/5 border border-white/20 text-white font-['JetBrains_Mono'] text-sm px-3 py-2 focus:outline-none focus:border-hud placeholder:text-white/30"
                   value={form.limitations} onChange={e => setForm({...form, limitations: e.target.value})} />
               </div>
               <button onClick={() => generateMut.mutate({ ...form, fitnessLevel: form.fitnessLevel as "Beginner"|"Intermediate"|"Advanced", name: form.name || undefined, focusArea: form.focusArea || undefined, limitations: form.limitations || undefined })}
                 disabled={generateMut.isPending || !aiAvailable || !form.goals || !form.availability}
-                className="w-full py-3 bg-red-600 text-white font-['JetBrains_Mono'] text-xs tracking-widest hover:bg-red-500 transition-colors disabled:opacity-50">
+                className="w-full py-3 bg-hud-deep text-white font-['JetBrains_Mono'] text-xs tracking-widest hover:bg-[#1f54e6] hover:shadow-[0_0_24px_rgb(56_198_255/0.45)] transition-colors disabled:opacity-50">
                 {generateMut.isPending ? "GENERATING..." : "GENERATE AI PLAN →"}
               </button>
             </div>
@@ -546,12 +567,12 @@ function AIEngine() {
 
       {/* Right: output */}
       <div className="border border-white/10 p-6 min-h-64">
-        <div className="font-['JetBrains_Mono'] text-xs text-red-500 tracking-widest mb-3">OUTPUT // AI POWERED ENGINE</div>
+        <div className="font-['JetBrains_Mono'] text-xs text-hud tracking-widest mb-3">OUTPUT // AI POWERED ENGINE</div>
         {generateMut.isPending && (
           <div className="font-['JetBrains_Mono'] text-sm text-white/50 animate-pulse">GENERATING OPERATOR BLUEPRINT...</div>
         )}
         {generateMut.error && (
-          <div className="font-['JetBrains_Mono'] text-sm text-red-400">ERROR: {generateMut.error.message}</div>
+          <div className="font-['JetBrains_Mono'] text-sm text-destructive">ERROR: {generateMut.error.message}</div>
         )}
         {plan ? (
           <div className="prose prose-invert prose-sm max-w-none font-['JetBrains_Mono'] text-sm text-white/80 [&_h1]:font-['Bebas_Neue'] [&_h2]:font-['Bebas_Neue'] [&_h3]:font-['Bebas_Neue'] [&_strong]:text-white">
@@ -615,44 +636,54 @@ export default function Home() {
     sessionStorage.setItem("maoPricing", JSON.stringify(p));
   }
 
-  const inputCls = "w-full bg-white/5 border border-white/20 text-white font-['JetBrains_Mono'] text-sm px-3 py-2 focus:outline-none focus:border-red-500 transition-colors placeholder:text-white/30";
+  const inputCls = "w-full bg-white/5 border border-white/20 text-white font-['JetBrains_Mono'] text-sm px-3 py-2 focus:outline-none focus:border-hud transition-colors placeholder:text-white/30";
   const labelCls = "block font-['JetBrains_Mono'] text-xs tracking-widest text-white/60 mb-1";
 
   return (
-    <div className="bg-[#0A0A0B] text-white min-h-screen">
+    <div className="bg-background text-white min-h-screen">
       <a className="skip-link" href="#main-content">Skip to main content</a>
+      <HudBackdrop />
       <Nav activeSection={activeSection} />
-      <main id="main-content">
+      <main id="main-content" className="relative z-10">
 
       {/* ── HERO ─────────────────────────────────────────────────────────── */}
       <section id="hero" className="min-h-screen flex flex-col justify-center pt-14 relative overflow-hidden">
-        {/* Background grid */}
-        <div className="absolute inset-0 opacity-5" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.3) 1px, transparent 1px)", backgroundSize: "60px 60px" }} />
-        <div className="max-w-6xl mx-auto px-4 relative z-10">
-          <div className="font-['JetBrains_Mono'] text-xs text-white/40 tracking-widest mb-6">
-            JAYLEE FIT ·· EST. JAYLEE HUSTLE INDUSTRIES LLC
+        <div aria-hidden="true" className="absolute inset-0" style={{ background: "radial-gradient(circle at 72% 45%, rgb(37 99 255 / 0.16), transparent 55%)" }} />
+        {/* Phone: reticle sits behind the headline */}
+        <div aria-hidden="true" className="lg:hidden absolute -right-24 top-24 w-[360px] opacity-25 pointer-events-none [&_div_div]:hidden">
+          <HudReticle />
+        </div>
+        <div className="max-w-6xl mx-auto px-4 relative z-10 w-full grid lg:grid-cols-[1.15fr_0.85fr] gap-10 items-center">
+          <div>
+            <BootLine />
+            <div className="font-['JetBrains_Mono'] text-xs text-white/40 tracking-widest mt-4 mb-6">
+              JAYLEE FIT ·· EST. JAYLEE HUSTLE INDUSTRIES LLC
+            </div>
+            <div className="mb-4">
+              <h1 className="font-['Bebas_Neue'] text-[120px] md:text-[180px] leading-none text-white tracking-tight hud-glow">MAO</h1>
+              <div className="font-['Chakra_Petch'] font-semibold text-2xl md:text-4xl tracking-[0.3em] text-hud">METHODOLOGY</div>
+              <div className="font-['JetBrains_Mono'] text-xs text-white/30 tracking-widest mt-2">JAYLEE HUSTLE INDUSTRIES</div>
+            </div>
+            <div className="relative w-40 h-px bg-white/10 mb-6 overflow-hidden">
+              <div className="absolute inset-0 hud-draw bg-gradient-to-r from-hud to-hud-deep" />
+            </div>
+            <p className="font-['JetBrains_Mono'] text-sm text-white/70 max-w-2xl leading-relaxed mb-3">
+              JayLee Hustle Industries uses the MAO (Massive Action Orientation) Framework—a practical system combining physical conditioning, focused habits, and accountability for busy founders and career professionals.
+            </p>
+            <p className="font-['JetBrains_Mono'] text-sm text-white/70 max-w-2xl leading-relaxed mb-10">
+              Adaptation is the game. Build a private starting blueprint now, then apply for human coaching and individualized review.
+            </p>
+            <div className="flex flex-wrap gap-4">
+              <a href="#apply" className="px-8 py-4 bg-hud-deep text-white font-['JetBrains_Mono'] text-xs tracking-widest shadow-[0_0_18px_rgb(37_99_255/0.35)] hover:bg-[#1f54e6] hover:shadow-[0_0_28px_rgb(56_198_255/0.55)] transition-[background-color,box-shadow,transform] active:scale-[0.97]">
+                APPLY FOR A PACKAGE
+              </a>
+              <a href="#ai-engine" className="px-8 py-4 border border-hud/50 text-hud font-['JetBrains_Mono'] text-xs tracking-widest hover:bg-hud/10 hover:border-hud transition-colors active:scale-[0.97]">
+                BUILD MY STARTING PLAN
+              </a>
+            </div>
+            <div className="mt-16 font-['JetBrains_Mono'] text-xs text-hud/50 tracking-widest animate-bounce">↓ SCROLL</div>
           </div>
-          <div className="mb-4">
-            <div className="font-['Bebas_Neue'] text-[120px] md:text-[180px] leading-none text-white tracking-tight">MAO</div>
-            <div className="font-['Bebas_Neue'] text-3xl md:text-5xl tracking-widest text-white/80">METHODOLOGY</div>
-            <div className="font-['JetBrains_Mono'] text-xs text-white/30 tracking-widest mt-1">JAYLEE HUSTLE INDUSTRIES</div>
-          </div>
-          <div className="w-24 h-px bg-red-600 mb-6" />
-          <p className="font-['JetBrains_Mono'] text-sm text-white/70 max-w-2xl leading-relaxed mb-3">
-            JayLee Hustle Industries uses the MAO (Massive Action Orientation) Framework—a practical system combining physical conditioning, focused habits, and accountability for busy founders and career professionals.
-          </p>
-          <p className="font-['JetBrains_Mono'] text-sm text-white/70 max-w-2xl leading-relaxed mb-10">
-            Adaptation is the game. Build a private starting blueprint now, then apply for human coaching and individualized review.
-          </p>
-          <div className="flex flex-wrap gap-4">
-            <a href="#apply" className="px-8 py-4 bg-red-600 text-white font-['JetBrains_Mono'] text-xs tracking-widest hover:bg-red-500 transition-colors active:scale-[0.97]">
-              APPLY FOR A PACKAGE
-            </a>
-            <a href="#ai-engine" className="px-8 py-4 border border-white/30 text-white font-['JetBrains_Mono'] text-xs tracking-widest hover:border-white/60 transition-colors active:scale-[0.97]">
-              BUILD MY STARTING PLAN
-            </a>
-          </div>
-          <div className="mt-16 font-['JetBrains_Mono'] text-xs text-white/20 tracking-widest animate-bounce">↓ SCROLL</div>
+          <HudReticle className="hidden lg:block w-full max-w-[460px] justify-self-end" />
         </div>
       </section>
 
@@ -667,7 +698,7 @@ export default function Home() {
             { code: "G/03", term: "SWARM ECOSYSTEM", def: "The MAO operating model that connects programming, check-ins, communication, and evidence review around each Operator. Automation is introduced only where the supporting systems are configured and supervised." },
           ].map(g => (
             <div key={g.code} className="border border-white/10 p-6 hover:border-white/20 transition-colors">
-              <div className="font-['JetBrains_Mono'] text-xs text-red-500 tracking-widest mb-2">{g.code}</div>
+              <div className="font-['JetBrains_Mono'] text-xs text-hud tracking-widest mb-2">{g.code}</div>
               <div className="font-['Bebas_Neue'] text-xl text-white mb-3">{g.term}</div>
               <p className="font-['JetBrains_Mono'] text-xs text-white/60 leading-relaxed">{g.def}</p>
             </div>
@@ -683,14 +714,14 @@ export default function Home() {
             { code: "S/02", title: "PERSONAL TRAINING", desc: "1:1 sessions and remote coaching with the JayLee Hustle Industries standard — every rep logged, every session reviewed.", features: ["LIVE OR REMOTE SESSIONS","FORM AUDITS + VIDEO REVIEW","ACCOUNTABILITY LOOP"] },
             { code: "S/03", title: "HUSTLE COACHING", desc: "Mindset, discipline, and operating systems for athletes, founders, and grinders. Train the body, sharpen the operator.", features: ["DAILY OPS + DISCIPLINE FRAMEWORK","QUARTERLY OBJECTIVE SETTING","MENTAL CONDITIONING"] },
           ].map(s => (
-            <div key={s.code} className="border border-white/10 p-6 hover:border-red-600/40 transition-colors group">
-              <div className="font-['JetBrains_Mono'] text-xs text-red-500 tracking-widest mb-2">{s.code}</div>
-              <div className="font-['Bebas_Neue'] text-2xl text-white mb-3 group-hover:text-red-400 transition-colors">{s.title}</div>
+            <div key={s.code} className="border border-white/10 p-6 hover:border-hud/40 transition-colors group">
+              <div className="font-['JetBrains_Mono'] text-xs text-hud tracking-widest mb-2">{s.code}</div>
+              <div className="font-['Bebas_Neue'] text-2xl text-white mb-3 group-hover:text-hud transition-colors">{s.title}</div>
               <p className="font-['JetBrains_Mono'] text-xs text-white/60 leading-relaxed mb-5">{s.desc}</p>
               <div className="space-y-2">
                 {s.features.map(f => (
                   <div key={f} className="flex items-center gap-2">
-                    <div className="w-1 h-1 bg-red-600 flex-shrink-0" />
+                    <div className="w-1 h-1 bg-hud-deep flex-shrink-0" />
                     <span className="font-['JetBrains_Mono'] text-[10px] text-white/50 tracking-wider">{f}</span>
                   </div>
                 ))}
@@ -707,8 +738,8 @@ export default function Home() {
             <p className="font-['JetBrains_Mono'] text-sm text-white/60 leading-relaxed mb-8">
               Operator Admission is for committed founders and high-output professionals. The form below is intentionally rigorous — it is the velvet rope between curiosity and the MAO Swarm Ecosystem. Investment details are revealed after qualification.
             </p>
-            <div className="border border-red-600/30 p-5 mb-8 bg-red-600/5">
-              <div className="font-['JetBrains_Mono'] text-xs text-red-500 tracking-widest mb-2">VELVET ROPE // PROTOCOL</div>
+            <div className="border border-hud/30 p-5 mb-8 bg-hud-deep/5">
+              <div className="font-['JetBrains_Mono'] text-xs text-hud tracking-widest mb-2">VELVET ROPE // PROTOCOL</div>
               <p className="font-['JetBrains_Mono'] text-xs text-white/60 leading-relaxed">No discount codes. No "buy now" buttons. Pricing is revealed by application only. Coach Jay reviews completed applications and sends next steps to qualified operators.</p>
             </div>
             <div className="font-['JetBrains_Mono'] text-xs text-white/30 space-y-1">
@@ -719,9 +750,15 @@ export default function Home() {
               <div>PHASE 4 — READINESS</div>
             </div>
           </div>
-          <div>
-            <ApplyForm onQualified={handleQualified} />
-          </div>
+          <AgentModule
+            code="MOD-02"
+            name="ADMISSION"
+            status={capabilities.data ? (capabilities.data.applicationIntake ? "online" : "offline") : "standby"}
+          >
+            <div className="p-5 md:p-6">
+              <ApplyForm onQualified={handleQualified} />
+            </div>
+          </AgentModule>
         </div>
       </Section>
 
@@ -731,8 +768,8 @@ export default function Home() {
           You are not buying a product. You are investing in a transformation engineered on the MAO methodology — Hustle First, Recomp over Vanity, Consistency over Intensity, Accountability Loop.
         </p>
         {!qualified && (
-          <div className="border border-red-600/40 p-5 bg-red-600/5 mb-8 text-center">
-            <div className="font-['JetBrains_Mono'] text-xs text-red-500 tracking-widest">PRICING IS REVEALED ONLY TO QUALIFIED OPERATORS. RUN INTAKE FIRST OR APPLY DIRECTLY.</div>
+          <div className="border border-hud/40 p-5 bg-hud-deep/5 mb-8 text-center">
+            <div className="font-['JetBrains_Mono'] text-xs text-hud tracking-widest">PRICING IS REVEALED ONLY TO QUALIFIED OPERATORS. RUN INTAKE FIRST OR APPLY DIRECTLY.</div>
           </div>
         )}
         <div className="grid md:grid-cols-3 gap-6">
@@ -756,11 +793,13 @@ export default function Home() {
               cta: "APPLY FOR LEGACY"
             },
           ].map(tier => (
-            <div key={tier.code} className={`border p-6 relative ${tier.badge ? 'border-red-600' : 'border-white/10'} hover:border-red-600/60 transition-colors`}>
+            <AgentModule key={tier.code} code={tier.code} name={tier.title}
+              status={qualified ? "online" : "standby"} label={qualified ? "UNLOCKED" : "LOCKED"}
+              className={`${tier.badge ? 'border-hud/70! shadow-[0_0_32px_rgb(56_198_255/0.12)]' : ''} hover:border-hud/60 transition-colors`}>
+            <div className="p-6">
               {tier.badge && (
-                <div className="absolute -top-3 left-6 bg-red-600 px-3 py-0.5 font-['JetBrains_Mono'] text-[10px] tracking-widest text-white">{tier.badge}</div>
+                <div className="inline-block mb-3 bg-hud-deep px-3 py-0.5 font-['JetBrains_Mono'] text-[10px] tracking-widest text-white">{tier.badge}</div>
               )}
-              <div className="font-['JetBrains_Mono'] text-xs text-red-500 tracking-widest mb-2">{tier.code}</div>
               <div className="font-['Bebas_Neue'] text-3xl text-white mb-2">{tier.title}</div>
               <div className="font-['JetBrains_Mono'] text-sm text-white/40 mb-4">
                 {qualified ? (pricing[tier.priceKey] ?? "Contact for Pricing") : "[PRICING HIDDEN] / REVEALED AFTER QUALIFICATION"}
@@ -769,15 +808,16 @@ export default function Home() {
               <div className="space-y-2 mb-6">
                 {tier.features.map(f => (
                   <div key={f} className="flex items-start gap-2">
-                    <div className="w-1 h-1 bg-red-600 flex-shrink-0 mt-1.5" />
+                    <div className="w-1 h-1 bg-hud-deep flex-shrink-0 mt-1.5" />
                     <span className="font-['JetBrains_Mono'] text-[10px] text-white/50">{f}</span>
                   </div>
                 ))}
               </div>
-              <a href="#apply" className="block text-center py-2.5 border border-red-600 text-red-500 font-['JetBrains_Mono'] text-xs tracking-widest hover:bg-red-600 hover:text-white transition-colors">
+              <a href="#apply" className="block text-center py-2.5 border border-hud text-hud font-['JetBrains_Mono'] text-xs tracking-widest hover:bg-hud-deep hover:text-white transition-colors">
                 {tier.cta}
               </a>
             </div>
+            </AgentModule>
           ))}
         </div>
         <p className="font-['JetBrains_Mono'] text-[10px] text-white/30 mt-6">* IN-PERSON INTENSIVES SUBJECT TO COACH AVAILABILITY AND SCHEDULING. ALL PACKAGES BY APPLICATION VIA THE MAO INTAKE.</p>
@@ -793,14 +833,14 @@ export default function Home() {
         <div className="flex flex-wrap gap-2 mb-6">
           {TRAINING_SPLIT.map((d, i) => (
             <button key={d.day} onClick={() => setActiveDay(i)}
-              className={`px-4 py-2 font-['JetBrains_Mono'] text-xs tracking-widest transition-colors ${activeDay === i ? 'bg-red-600 text-white' : 'border border-white/20 text-white/60 hover:border-white/40'}`}>
+              className={`px-4 py-2 font-['JetBrains_Mono'] text-xs tracking-widest transition-colors ${activeDay === i ? 'bg-hud-deep text-white' : 'border border-white/20 text-white/60 hover:border-white/40'}`}>
               {d.day}
             </button>
           ))}
         </div>
         {/* Day content */}
         <div className="border border-white/10 p-6">
-          <div className="font-['JetBrains_Mono'] text-xs text-red-500 tracking-widest mb-1">DAY {activeDay + 1} · {TRAINING_SPLIT[activeDay].day}</div>
+          <div className="font-['JetBrains_Mono'] text-xs text-hud tracking-widest mb-1">DAY {activeDay + 1} · {TRAINING_SPLIT[activeDay].day}</div>
           <div className="font-['Bebas_Neue'] text-2xl text-white mb-1">{TRAINING_SPLIT[activeDay].label}</div>
           <div className="font-['JetBrains_Mono'] text-xs text-white/40 mb-6">{TRAINING_SPLIT[activeDay].muscles} — {TRAINING_SPLIT[activeDay].count} LIFTS</div>
           <div className="overflow-x-auto">
@@ -831,7 +871,11 @@ export default function Home() {
 
       {/* ── AI ENGINE ────────────────────────────────────────────────────── */}
       <Section id="ai-engine" index="05 /" title="PROGRAM ARCHITECT" className="border-t border-white/5">
-        <ProgramArchitect />
+        <AgentModule code="MOD-05" name="PROGRAM ARCHITECT" status="online" label="LOCAL · ONLINE">
+          <div className="p-4 md:p-6">
+            <ProgramArchitect />
+          </div>
+        </AgentModule>
       </Section>
 
       {/* ── COMMAND CENTER ───────────────────────────────────────────────── */}
@@ -840,22 +884,24 @@ export default function Home() {
           Every admitted Operator gets a private dashboard for biomarkers, audits, and direct communication. No vague 'wellness' copy. This is the accountability infrastructure behind the MAO coaching process.
         </p>
         <p className="font-['JetBrains_Mono'] text-xs text-white/30 tracking-widest mb-8">BELOW: AN ILLUSTRATIVE COMMAND CENTER PREVIEW. SAMPLE NUMBERS SHOWN FOR DEMONSTRATION.</p>
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+        <AgentModule code="MOD-06" name="COMMAND CENTER" status="standby" label="PREVIEW · SAMPLE DATA" className="mb-10">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 md:p-5">
           {[
             { code: "D/01", stat: "96%", label: "DAILY COMPLIANCE", sub: "ILLUSTRATIVE WEEK", desc: "A sample view of how training, nutrition, and recovery adherence can be reviewed during coaching." },
             { code: "D/02", stat: "BF 13.4%", label: "BIOMARKER TRACKING", sub: "ILLUSTRATIVE TREND", desc: "A sample view of how body-composition and recovery metrics can be organized over time. Results vary by individual." },
             { code: "D/03", stat: "DIRECT", label: "COMM CHANNELS", sub: "CHANNELS SET DURING ONBOARDING", desc: "Coaching communication is handled directly. Channel availability and response expectations are confirmed before a client starts." },
             { code: "D/04", stat: "WEEKLY", label: "COACHING AUDIT", sub: "PLAN REVIEW + ADJUSTMENT", desc: "The weekly review identifies bottlenecks and informs the next programming adjustment. No copy-paste programs." },
           ].map(d => (
-            <div key={d.code} className="border border-white/10 p-5">
-              <div className="font-['JetBrains_Mono'] text-xs text-red-500 tracking-widest mb-2">{d.code}</div>
+            <div key={d.code} className="border border-white/10 bg-[#05070b]/60 p-5">
+              <div className="font-['JetBrains_Mono'] text-xs text-hud tracking-widest mb-2">{d.code}</div>
               <div className="font-['Bebas_Neue'] text-3xl text-white mb-1">{d.stat}</div>
               <div className="font-['JetBrains_Mono'] text-[10px] text-white/60 tracking-widest mb-1">{d.label}</div>
-              <div className="font-['JetBrains_Mono'] text-[10px] text-red-500/70 tracking-widest mb-3">{d.sub}</div>
+              <div className="font-['JetBrains_Mono'] text-[10px] text-hud/70 tracking-widest mb-3">{d.sub}</div>
               <p className="font-['JetBrains_Mono'] text-[10px] text-white/40 leading-relaxed">{d.desc}</p>
             </div>
           ))}
         </div>
+        </AgentModule>
         <div className="border border-white/10 p-6">
           <div className="font-['JetBrains_Mono'] text-xs text-white/30 tracking-widest mb-3">ACCOUNTABILITY LOOP ·· MATERIALIZED</div>
           <p className="font-['JetBrains_Mono'] text-sm text-white/60 leading-relaxed">The Command Center supports the Accountability Loop: the Operator logs the work, the coaching system organizes the review, and the next plan is adjusted from the available evidence. The preview above uses illustrative data and does not represent a client result.</p>
@@ -872,7 +918,7 @@ export default function Home() {
             </div>
           </div>
           <div>
-            <div className="font-['Bebas_Neue'] text-2xl text-white mb-6 border-l-2 border-red-600 pl-4">
+            <div className="font-['Bebas_Neue'] text-2xl text-white mb-6 border-l-2 border-hud pl-4">
               JAYLEE FIT IS NOT A GYM. IT IS AN OPERATING SYSTEM FOR YOUR BODY.
             </div>
             <p className="font-['JetBrains_Mono'] text-sm text-white/70 leading-relaxed mb-4">
@@ -889,7 +935,7 @@ export default function Home() {
                 { label: "METHOD", items: ["Hustle First","Recomp over Vanity","Consistency over Intensity","Accountability Loop","Repeat for 12 weeks"] },
               ].map(b => (
                 <div key={b.label}>
-                  <div className="font-['JetBrains_Mono'] text-[10px] text-red-500 tracking-widest mb-2">{b.label}</div>
+                  <div className="font-['JetBrains_Mono'] text-[10px] text-hud tracking-widest mb-2">{b.label}</div>
                   <ul className="space-y-1">
                     {b.items.map(i => (
                       <li key={i} className="font-['JetBrains_Mono'] text-[10px] text-white/50">{i}</li>
@@ -906,7 +952,7 @@ export default function Home() {
                 { stat: "REAL", label: "Accountability" },
               ].map(s => (
                 <div key={s.stat} className="border border-white/10 p-3 text-center">
-                  <div className="font-['Bebas_Neue'] text-2xl text-red-500">{s.stat}</div>
+                  <div className="font-['Bebas_Neue'] text-2xl text-hud">{s.stat}</div>
                   <div className="font-['JetBrains_Mono'] text-[9px] text-white/40 tracking-wider">{s.label}</div>
                 </div>
               ))}
@@ -944,7 +990,7 @@ export default function Home() {
         {lightboxImg && (
           <div role="dialog" aria-modal="true" aria-label="Expanded gallery image" className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4" onClick={() => setLightboxImg(null)}>
             <img src={lightboxImg} alt="Expanded JayLee Fit gallery" className="max-h-[90vh] max-w-full object-contain" onClick={event => event.stopPropagation()} />
-            <button type="button" autoFocus onClick={() => setLightboxImg(null)} className="absolute top-4 right-4 min-h-11 px-4 text-white bg-black/70 font-['JetBrains_Mono'] text-xs tracking-widest hover:text-red-400">CLOSE ✕</button>
+            <button type="button" autoFocus onClick={() => setLightboxImg(null)} className="absolute top-4 right-4 min-h-11 px-4 text-white bg-black/70 font-['JetBrains_Mono'] text-xs tracking-widest hover:text-hud">CLOSE ✕</button>
           </div>
         )}
       </Section>
@@ -954,13 +1000,13 @@ export default function Home() {
         <p className="font-['JetBrains_Mono'] text-sm text-white/60 max-w-2xl mb-4">
           For already-onboarded clients only. Once Coach Jay has approved your application and issued an Order ID, settle your invoice via PayPal below.
         </p>
-        <div className="border border-red-600/30 p-4 bg-red-600/5 mb-8 inline-block">
-          <span className="font-['JetBrains_Mono'] text-xs text-red-500 tracking-widest">NEW HERE? RUN THE INTAKE ABOVE. MAO DOES NOT SELL OFF THE SHELF.</span>
+        <div className="border border-hud/30 p-4 bg-hud-deep/5 mb-8 inline-block">
+          <span className="font-['JetBrains_Mono'] text-xs text-hud tracking-widest">NEW HERE? RUN THE INTAKE ABOVE. MAO DOES NOT SELL OFF THE SHELF.</span>
         </div>
         <div className="grid lg:grid-cols-2 gap-10">
           {/* PayPal panel */}
           <div className="border border-white/10 p-6 min-w-0">
-            <div className="font-['JetBrains_Mono'] text-xs text-red-500 tracking-widest mb-3">PAYPAL</div>
+            <div className="font-['JetBrains_Mono'] text-xs text-hud tracking-widest mb-3">PAYPAL</div>
             <p className="font-['JetBrains_Mono'] text-xs text-white/60 mb-4">Send to the JayLee Hustle Industries PayPal handle:</p>
             <div className="flex items-center gap-3 bg-white/5 border border-white/20 px-4 py-3 mb-4 min-w-0">
               <span className="font-['JetBrains_Mono'] text-sm text-white flex-1 min-w-0 break-all">magicdeals.wholesale@gmail.com</span>
@@ -974,12 +1020,12 @@ export default function Home() {
           </div>
           {/* Self-report form */}
           <div className="border border-white/10 p-6 min-w-0">
-            <div className="font-['JetBrains_Mono'] text-xs text-red-500 tracking-widest mb-1">PAYMENT // SELF-REPORT</div>
+            <div className="font-['JetBrains_Mono'] text-xs text-hud tracking-widest mb-1">PAYMENT // SELF-REPORT</div>
             <div className="font-['Bebas_Neue'] text-2xl text-white mb-2">ALREADY SENT PAYMENT?</div>
             <p className="font-['JetBrains_Mono'] text-xs text-white/50 mb-6">Submit your details and PayPal Transaction ID for manual review. A payment report is not confirmation; access begins only after the transaction is verified.</p>
             {payDone ? (
               <div className="text-center py-8">
-                <div className="font-['JetBrains_Mono'] text-xs text-red-500 tracking-widest mb-2">// RECEIVED</div>
+                <div className="font-['JetBrains_Mono'] text-xs text-hud tracking-widest mb-2">// RECEIVED</div>
                 <div className="font-['Bebas_Neue'] text-2xl text-white">PAYMENT REPORT RECEIVED</div>
                 <p className="font-['JetBrains_Mono'] text-xs text-white/50 mt-2">Awaiting manual review.</p>
               </div>
@@ -1015,9 +1061,9 @@ export default function Home() {
                 {!capabilities.isPending && !paymentReportingAvailable && (
                   <p className="font-['JetBrains_Mono'] text-xs text-amber-200">PAYMENT REPORTING IS TEMPORARILY PAUSED. Do not submit transaction details until secure storage is connected.</p>
                 )}
-                {payMut.error && <p className="font-['JetBrains_Mono'] text-xs text-red-400">{payMut.error.message}</p>}
+                {payMut.error && <p className="font-['JetBrains_Mono'] text-xs text-destructive">{payMut.error.message}</p>}
                 <button onClick={() => payMut.mutate(payForm)} disabled={payMut.isPending || !paymentReportingAvailable || !payForm.name || !payForm.email || !payForm.amount || !payForm.orderId || !payForm.transactionId}
-                  className="w-full py-3 bg-red-600 text-white font-['JetBrains_Mono'] text-xs tracking-widest hover:bg-red-500 transition-colors disabled:opacity-50">
+                  className="w-full py-3 bg-hud-deep text-white font-['JetBrains_Mono'] text-xs tracking-widest hover:bg-[#1f54e6] hover:shadow-[0_0_24px_rgb(56_198_255/0.45)] transition-colors disabled:opacity-50">
                   {payMut.isPending ? "PROCESSING..." : "REPORT PAYMENT →"}
                 </button>
               </div>
@@ -1037,14 +1083,14 @@ export default function Home() {
               <p className="font-['JetBrains_Mono'] text-xs text-white/40 leading-relaxed">High-performance coaching portal. Body recomposition, personal training, and hustle coaching orchestrated by the MAO operating system. Investment tiers — not subscriptions. By application only.</p>
             </div>
             <div>
-              <div className="font-['JetBrains_Mono'] text-xs text-red-500 tracking-widest mb-3">CONTACT</div>
+              <div className="font-['JetBrains_Mono'] text-xs text-hud tracking-widest mb-3">CONTACT</div>
               <div className="font-['JetBrains_Mono'] text-xs text-white/50 space-y-1">
                 <div>Jay.everydayhustleco@gmail.com</div>
                 <div>PayPal: magicdeals.wholesale@gmail.com</div>
               </div>
             </div>
             <div>
-              <div className="font-['JetBrains_Mono'] text-xs text-red-500 tracking-widest mb-3">SITEMAP</div>
+              <div className="font-['JetBrains_Mono'] text-xs text-hud tracking-widest mb-3">SITEMAP</div>
               <div className="grid grid-cols-2 gap-1">
                 {["#services","#apply","#investment","#sample-split","#ai-engine","#coach-jay","#proof","#gallery","#pay-invoice"].map(href => (
                   <a key={href} href={href} className="font-['JetBrains_Mono'] text-[10px] text-white/30 hover:text-white/60 tracking-widest transition-colors">
