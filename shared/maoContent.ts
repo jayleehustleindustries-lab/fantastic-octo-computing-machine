@@ -31,6 +31,21 @@ export const TIERS = [
   },
 ];
 
+/** Remap: the one product visitors can buy without applying. Price comes from the server (REMAP_PRICE_CENTS). */
+export const REMAP = {
+  name: "REMAP",
+  tagline: "Your program, your numbers. Built the day you buy it.",
+  desc: "A personal training program built around your body, schedule and equipment, plus the exact calorie and macro targets to go with it. Self-guided: no application, no waiting.",
+  features: [
+    "Custom program: 8–12 weeks for beginners, 6–8 intermediate, up to 6 advanced",
+    "Phase-by-phase training with sets, reps, rest and effort targets",
+    "Your BMR and daily burn (activity multiplier included)",
+    "Daily calorie target + protein, carb and fat grams",
+    "How to eat to hit them, and how to adjust as you go",
+    "Progression, deload and weekly check-in rules",
+  ],
+};
+
 export const TERMS = [
   { code: "G/00", term: "FOUNDER — MEET COACH JAY", def: "Founder of JayLee Hustle Industries. Author of the MAO Framework. Coach to the Operators on this platform — every protocol on this site comes from his system, not a textbook. Coach Jay built the MAO Framework in the field — not in a classroom. Every Operator on the roster is coached against the same standard he holds himself to. Adaptation is the game." },
   { code: "G/01", term: "OPERATOR", def: "A high-output founder, executive, or career professional whose physical conditioning is the lever that compounds every other system in their life. We do not coach hobbyists. We coach Operators." },

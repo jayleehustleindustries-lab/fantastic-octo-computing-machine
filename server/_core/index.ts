@@ -4,6 +4,7 @@ import { createServer } from "http";
 import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
+import { handleStripeWebhook, stripeConfigured } from "../remap";
 import { registerStorageProxy } from "./storageProxy";
 import { appRouter, siteCapabilities } from "../routers";
 import { ENV } from "./env";
@@ -35,6 +36,22 @@ async function startServer() {
   // Railway sits in front as a proxy; trust it so req.ip is the visitor's address.
   app.set("trust proxy", 1);
   // Configure body parser with larger size limit for file uploads
+  // Stripe signs the raw request body, so this route must read it before the JSON parser does.
+  app.post("/api/stripe/webhook", express.raw({ type: "application/json", limit: "1mb" }), async (req, res) => {
+    const signature = req.get("stripe-signature");
+    if (!stripeConfigured() || !signature) {
+      res.status(400).send("Stripe webhook not configured");
+      return;
+    }
+    try {
+      await handleStripeWebhook(req.body as Buffer, signature);
+      res.json({ received: true });
+    } catch (error) {
+      console.error("[Stripe] webhook rejected:", error instanceof Error ? error.message : error);
+      res.status(400).send("Webhook error");
+    }
+  });
+
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
 

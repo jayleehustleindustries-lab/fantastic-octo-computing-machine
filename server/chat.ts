@@ -7,7 +7,10 @@ import type {
 } from "@anthropic-ai/sdk/resources/beta/messages/messages";
 import type { ChatLead } from "./airtable";
 import { ASK_JAY_SYSTEM_PROMPT } from "./chatPrompt";
-import { CLAUDE_MODEL, claudeConfigured, getClaude } from "./claude";
+import { claudeConfigured, getClaude } from "./claude";
+
+/** Free conversations run on the fast, low-cost model; Opus is reserved for paid Remap builds. */
+export const FREE_MODEL = process.env.ANTHROPIC_FREE_MODEL || "claude-haiku-5-5";
 
 /**
  * Ask Jay: one visitor turn in, one reply out. The browser keeps the
@@ -31,6 +34,8 @@ export const chatInput = z.object({
       "Messages must alternate, starting with the visitor.",
     )
     .refine(messages => messages[messages.length - 1].role === "user", "The last message must be the visitor's."),
+  /** `ref` from a social DM link, e.g. "ig". */
+  source: z.string().trim().max(40).optional(),
 });
 
 export type ChatHistory = z.infer<typeof chatInput>["messages"];
@@ -41,6 +46,7 @@ const leadInput = z.object({
   goal: z.string().trim().max(500).default(""),
   summary: z.string().trim().max(1500).default(""),
   ready_to_apply: z.boolean().default(false),
+  next: z.enum(["remap", "coaching"]).default("coaching"),
 });
 
 export const SAVE_LEAD_TOOL: BetaTool = {
@@ -56,15 +62,21 @@ export const SAVE_LEAD_TOOL: BetaTool = {
       goal: { type: "string", description: "Their main goal, in their words." },
       summary: { type: "string", description: "Two or three sentences for Coach Jay: goal, situation, schedule, anything notable." },
       ready_to_apply: { type: "boolean", description: "True if they want to start the application now." },
+      next: {
+        type: "string",
+        enum: ["remap", "coaching"],
+        description: "remap if they want the self-guided Remap program; coaching if they want 1:1 coaching with Coach Jay.",
+      },
     },
-    required: ["name", "email", "goal", "summary", "ready_to_apply"],
+    required: ["name", "email", "goal", "summary", "ready_to_apply", "next"],
     additionalProperties: false,
   },
 };
 
-export type SaveLead = (lead: ChatLead) => Promise<void>;
+export type SaveLead = (lead: ChatLead & { next: "remap" | "coaching" }) => Promise<void>;
 
-export type ChatResult = { reply: string; lead?: { name: string; email: string } };
+export type ChatLeadHandoff = { name: string; email: string; goal: string; next: "remap" | "coaching" };
+export type ChatResult = { reply: string; lead?: ChatLeadHandoff };
 
 const REFUSAL_REPLY =
   "I can't help with that one. I'm here for questions about JayLee Fit coaching, starting plans, and applying. What are you working toward?";
@@ -81,13 +93,10 @@ export async function askJay(history: ChatHistory, saveLead: SaveLead): Promise<
 
   for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
     const response = await getClaude().beta.messages.create({
-      model: CLAUDE_MODEL,
-      // Thinking shares this budget, so leave room beyond a ~500-word plan.
-      max_tokens: 8000,
+      model: FREE_MODEL,
+      // Thinking shares this budget, so leave room beyond a short starter plan.
+      max_tokens: 6000,
       output_config: { effort: "low" },
-      // On a safety decline, the API reruns the request on a fallback model.
-      betas: ["server-side-fallback-2026-07-01"],
-      fallbacks: "default",
       cache_control: { type: "ephemeral" },
       system: ASK_JAY_SYSTEM_PROMPT,
       tools: [SAVE_LEAD_TOOL],
@@ -120,10 +129,16 @@ export async function askJay(history: ChatHistory, saveLead: SaveLead): Promise<
         continue;
       }
       try {
-        const { ready_to_apply, ...rest } = parsed.data;
-        await saveLead({ ...rest, readyToApply: ready_to_apply });
-        lead = { name: rest.name, email: rest.email };
-        results.push({ type: "tool_result", tool_use_id: use.id, content: "Saved. The Continue my application button is now showing below the chat." });
+        const { ready_to_apply, next, ...rest } = parsed.data;
+        await saveLead({ ...rest, readyToApply: ready_to_apply, next });
+        lead = { name: rest.name, email: rest.email, goal: rest.goal, next };
+        results.push({
+          type: "tool_result",
+          tool_use_id: use.id,
+          content: next === "remap"
+            ? "Saved. A \"Build my Remap\" button is now showing below the chat; it opens the Remap form with their name and email filled in."
+            : "Saved. A \"Continue my application\" button is now showing below the chat; their name and email are filled in.",
+        });
       } catch (error) {
         // Keep storage errors out of the conversation; the visitor only needs the way forward.
         console.error("[Ask Jay] save_lead failed:", error);

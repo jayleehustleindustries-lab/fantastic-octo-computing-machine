@@ -18,7 +18,7 @@ const saveCall = (input: Record<string, unknown>) => ({
 });
 
 const history = [{ role: "user" as const, content: "What's in Recomp?" }];
-const goodLead = { name: "Sam", email: "sam@example.com", goal: "Lose fat", summary: "Busy dad.", ready_to_apply: true };
+const goodLead = { name: "Sam", email: "sam@example.com", goal: "Lose fat", summary: "Busy dad.", ready_to_apply: true, next: "remap" };
 
 beforeEach(() => {
   create.mockReset();
@@ -36,16 +36,18 @@ describe("askJay", () => {
     expect(create).not.toHaveBeenCalled();
   });
 
-  it("sends the conversation with the cached Ask Jay prompt and returns the reply text", async () => {
+  it("answers free visitors on Haiku 5.5 with the cached Ask Jay prompt", async () => {
     create.mockResolvedValue(reply("Recomp adds weekly calls."));
     const result = await askJay(history, vi.fn());
 
     expect(result).toEqual({ reply: "Recomp adds weekly calls.", lead: undefined });
-    expect(create.mock.calls[0][0]).toMatchObject({
-      model: "claude-opus-5-5",
+    const params = create.mock.calls[0][0];
+    // Haiku has no server-side fallback, so the request carries no fallback beta.
+    expect(params.betas).toBeUndefined();
+    expect(params.fallbacks).toBeUndefined();
+    expect(params).toMatchObject({
+      model: "claude-haiku-5-5",
       output_config: { effort: "low" },
-      betas: ["server-side-fallback-2026-07-01"],
-      fallbacks: "default",
       cache_control: { type: "ephemeral" },
       system: ASK_JAY_SYSTEM_PROMPT,
       tools: [SAVE_LEAD_TOOL],
@@ -69,13 +71,14 @@ describe("askJay", () => {
 
     const result = await askJay(history, saveLead);
 
-    expect(saveLead).toHaveBeenCalledWith({ name: "Sam", email: "sam@example.com", goal: "Lose fat", summary: "Busy dad.", readyToApply: true });
-    expect(result).toEqual({ reply: "You're all set.", lead: { name: "Sam", email: "sam@example.com" } });
+    expect(saveLead).toHaveBeenCalledWith({ name: "Sam", email: "sam@example.com", goal: "Lose fat", summary: "Busy dad.", readyToApply: true, next: "remap" });
+    expect(result).toEqual({ reply: "You're all set.", lead: { name: "Sam", email: "sam@example.com", goal: "Lose fat", next: "remap" } });
     const followUp = create.mock.calls[1][0].messages;
     // The assistant turn goes back unchanged (thinking included), then the tool result.
     expect(followUp[1]).toEqual({ role: "assistant", content: saveCall(goodLead).content });
     expect(followUp[2].content[0]).toMatchObject({ type: "tool_result", tool_use_id: "toolu_1" });
     expect(followUp[2].content[0].is_error).toBeUndefined();
+    expect(followUp[2].content[0].content).toContain("Build my Remap");
   });
 
   it("rejects a malformed email without saving", async () => {
@@ -110,6 +113,11 @@ describe("Ask Jay prompt", () => {
     expect(ASK_JAY_SYSTEM_PROMPT).toContain("RECOMP");
     expect(ASK_JAY_SYSTEM_PROMPT).toContain("Never quote, estimate, or hint at prices");
     expect(ASK_JAY_SYSTEM_PROMPT).not.toMatch(/\$\s?\d/);
+  });
+
+  it("sells Remap without giving away its numbers for free", () => {
+    expect(ASK_JAY_SYSTEM_PROMPT).toContain("REMAP: buy now, no application");
+    expect(ASK_JAY_SYSTEM_PROMPT).toContain("don't calculate their calories, BMR, or macros");
   });
 
   it("introduces itself as an AI assistant, not Coach Jay", () => {

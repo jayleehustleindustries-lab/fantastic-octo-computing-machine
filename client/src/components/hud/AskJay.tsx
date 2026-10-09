@@ -2,8 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { AIChatBox, type Message } from "@/components/AIChatBox";
 import { AgentModule } from "./AgentModule";
+import { setRemapPrefill, visitRef } from "@/lib/visit";
 
 export type AskJayLead = { name: string; email: string };
+type Handoff = AskJayLead & { goal: string; next: "remap" | "coaching" };
 
 type ChatMessage = Message & { role: "user" | "assistant" };
 
@@ -42,7 +44,7 @@ export function AskJay({ available, checking, onApply }: {
 }) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>(loadHistory);
-  const [lead, setLead] = useState<AskJayLead | null>(null);
+  const [lead, setLead] = useState<Handoff | null>(null);
   const [failed, setFailed] = useState<{ text: string; error: string } | null>(null);
   const pendingPrompt = useRef<string | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -57,7 +59,7 @@ export function AskJay({ available, checking, onApply }: {
     const history: ChatMessage[] = [...messages, { role: "user", content: text }];
     setMessages(history);
     setFailed(null);
-    sendMut.mutate({ messages: history }, {
+    sendMut.mutate({ messages: history, source: visitRef() }, {
       onSuccess: result => {
         setMessages([...history, { role: "assistant", content: result.reply }]);
         if (result.lead) setLead(result.lead);
@@ -96,10 +98,15 @@ export function AskJay({ available, checking, onApply }: {
     return () => document.removeEventListener("keydown", onKey);
   }, [open]);
 
-  function continueToApplication() {
+  function continueWithLead() {
     if (!lead) return;
     setOpen(false);
-    onApply(lead);
+    if (lead.next === "remap") {
+      setRemapPrefill({ name: lead.name, email: lead.email, goalNote: lead.goal });
+      window.location.assign("/remap");
+    } else {
+      onApply({ name: lead.name, email: lead.email });
+    }
   }
 
   const status = checking ? "standby" : available ? "online" : "offline";
@@ -128,7 +135,7 @@ export function AskJay({ available, checking, onApply }: {
         <div className="flex min-h-0 flex-1 flex-col">
           <div className="flex items-start justify-between gap-3 px-4 pt-3 pb-2">
             <p className="font-['JetBrains_Mono'] text-[11px] leading-relaxed text-white/55">
-              Jay is Coach Jay's AI assistant. Ask about coaching, get a starting plan, or start your application.
+              Jay is Coach Jay's AI assistant. Ask anything, get a free starter week, or get set up with Remap or coaching.
             </p>
             <button
               type="button"
@@ -163,10 +170,10 @@ export function AskJay({ available, checking, onApply }: {
                   {lead && (
                     <button
                       type="button"
-                      onClick={continueToApplication}
+                      onClick={continueWithLead}
                       className="w-full bg-hud-deep py-3 font-['JetBrains_Mono'] text-xs tracking-widest text-white hover:bg-[#1f54e6] hover:shadow-[0_0_24px_rgb(56_198_255/0.45)] transition-colors"
                     >
-                      CONTINUE MY APPLICATION →
+                      {lead.next === "remap" ? "BUILD MY REMAP →" : "CONTINUE MY APPLICATION →"}
                     </button>
                   )}
                   <p className="font-['JetBrains_Mono'] text-[10px] text-white/35">

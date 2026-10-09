@@ -7,7 +7,8 @@ import { BootLine } from "@/components/hud/BootLine";
 import { HudBackdrop } from "@/components/hud/HudBackdrop";
 import { HudReticle } from "@/components/hud/HudReticle";
 import { AskJay, openAskJay, type AskJayLead } from "@/components/hud/AskJay";
-import { COACH, SERVICES, TERMS, TIERS } from "@shared/maoContent";
+import { COACH, REMAP, SERVICES, TERMS, TIERS } from "@shared/maoContent";
+import { captureRef } from "@/lib/visit";
 
 // ── Versioned campaign assets served with the application ──────────────────
 const ASSETS = {
@@ -375,6 +376,9 @@ export default function Home() {
   const [qualified, setQualified] = useState(false);
   const [pricing, setPricing] = useState<Record<string, string>>({});
   const chatAvailable = capabilities.data?.aiChat === true;
+  const remapOffer = trpc.remap.offer.useQuery();
+  const remapPrice = remapOffer.data?.priceCents ? `$${(remapOffer.data.priceCents / 100).toFixed(remapOffer.data.priceCents % 100 ? 2 : 0)}` : null;
+  useEffect(() => { captureRef(); }, []);
   const [applyPrefill, setApplyPrefill] = useState<AskJayLead | null>(null);
   const [lightboxImg, setLightboxImg] = useState<string | null>(null);
   const [payForm, setPayForm] = useState({ name: "", email: "", method: "PayPal", amount: "", orderId: "", transactionId: "", note: "" });
@@ -478,7 +482,8 @@ export default function Home() {
                 BUILD MY STARTING PLAN
               </a>
             </div>
-            <div className="mt-16 font-['JetBrains_Mono'] text-xs text-hud/50 tracking-widest animate-bounce">↓ SCROLL</div>
+            <a href="/remap" className="inline-block mt-6 font-['JetBrains_Mono'] text-xs tracking-widest text-hud hover:text-white">OR START TODAY WITH REMAP →</a>
+            <div className="mt-12 font-['JetBrains_Mono'] text-xs text-hud/50 tracking-widest animate-bounce">↓ SCROLL</div>
           </div>
           <HudReticle className="hidden lg:block w-full max-w-[460px] justify-self-end" />
         </div>
@@ -519,11 +524,29 @@ export default function Home() {
       {/* ── INVESTMENT ───────────────────────────────────────────────────── */}
       <Section id="investment" index="02 /" title="PACKAGES" className="border-t border-white/5">
         <p className="font-['JetBrains_Mono'] text-sm text-white/60 max-w-2xl mb-8">
-          You are not buying a product. You are investing in a transformation engineered on the MAO methodology — Hustle First, Recomp over Vanity, Consistency over Intensity, Accountability Loop.
+          Two ways in. Start today with a Remap built around your body and schedule, or apply for 1:1 coaching with Coach Jay on the MAO methodology.
         </p>
+        <AgentModule code="INV/00" name={REMAP.name} status={remapOffer.data?.available ? "online" : "standby"} label={remapOffer.data?.available ? "AVAILABLE NOW" : "OPENING SOON"} className="mb-12 border-hud/70! shadow-[0_0_32px_rgb(56_198_255/0.12)]">
+          <div className="p-6 grid md:grid-cols-[1.1fr_0.9fr] gap-6 items-center">
+            <div>
+              <div className="inline-block mb-3 bg-hud-deep px-3 py-0.5 font-['JetBrains_Mono'] text-[10px] tracking-widest text-white">NO APPLICATION</div>
+              <div className="font-['Chakra_Petch'] font-semibold text-3xl tracking-[0.12em] text-white">{REMAP.name}{remapPrice && <span className="text-hud"> · {remapPrice}</span>}</div>
+              <p className="font-['JetBrains_Mono'] text-sm text-white/70 leading-relaxed mt-3">{REMAP.tagline} {REMAP.desc}</p>
+              <a href="/remap" className="inline-block mt-5 px-6 py-3 bg-hud-deep text-white font-['JetBrains_Mono'] text-xs tracking-widest hover:bg-[#1f54e6] hover:shadow-[0_0_24px_rgb(56_198_255/0.45)] transition-colors">
+                {remapOffer.data?.available ? "BUILD MY REMAP →" : "SEE REMAP + FREE BMR CALCULATOR →"}
+              </a>
+            </div>
+            <ul className="space-y-2">
+              {REMAP.features.map(f => (
+                <li key={f} className="flex items-start gap-2 font-['JetBrains_Mono'] text-[11px] text-white/65"><span className="text-hud">▸</span>{f}</li>
+              ))}
+            </ul>
+          </div>
+        </AgentModule>
+        <h3 className="font-['Chakra_Petch'] font-semibold text-lg tracking-[0.18em] text-white mb-4">1:1 COACHING <span className="text-white/40 text-sm">// BY APPLICATION</span></h3>
         {!qualified && (
           <div className="border border-hud/40 p-5 bg-hud-deep/5 mb-8 text-center">
-            <div className="font-['JetBrains_Mono'] text-xs text-hud tracking-widest">PRICING IS REVEALED ONLY TO QUALIFIED OPERATORS. RUN INTAKE FIRST OR APPLY DIRECTLY.</div>
+            <div className="font-['JetBrains_Mono'] text-xs text-hud tracking-widest">COACHING PRICING IS REVEALED AFTER YOU COMPLETE THE APPLICATION.</div>
           </div>
         )}
         <div className="grid md:grid-cols-3 gap-6">
@@ -635,7 +658,7 @@ export default function Home() {
             </p>
             <div className="border border-hud/30 p-5 mb-8 bg-hud-deep/5">
               <div className="font-['JetBrains_Mono'] text-xs text-hud tracking-widest mb-2">VELVET ROPE // PROTOCOL</div>
-              <p className="font-['JetBrains_Mono'] text-xs text-white/60 leading-relaxed">No discount codes. No "buy now" buttons. Pricing is revealed by application only. Coach Jay reviews completed applications and sends next steps to qualified operators.</p>
+              <p className="font-['JetBrains_Mono'] text-xs text-white/60 leading-relaxed">Coaching has no "buy now" button and no discount codes. Pricing is revealed by application only, and Coach Jay reviews every completed application himself. Want to start on your own today? That's what Remap is for.</p>
             </div>
             <div className="font-['JetBrains_Mono'] text-xs text-white/30 space-y-1">
               <div>4-PHASE STRICT QUALIFICATION</div>

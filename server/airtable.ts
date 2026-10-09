@@ -168,6 +168,10 @@ export type ChatLead = {
   goal: string;
   summary: string;
   readyToApply: boolean;
+  /** Which offer they were heading to when they shared their details. */
+  next?: "remap" | "coaching";
+  /** Lead Source, e.g. "Instagram DM → jayleefit.com Ask Jay chat". */
+  source?: string;
 };
 
 /** Notes sections are split on blank lines, so keep each value on one paragraph. */
@@ -178,7 +182,8 @@ export function mergeChatNotes(existing: string, lead: ChatLead): string {
   const block = [
     CHAT_MARKER,
     `Goal: ${oneParagraph(lead.goal)}`,
-    `Ready to apply: ${lead.readyToApply ? "Yes" : "No"}`,
+    `Interested in: ${lead.next === "remap" ? "Remap (self-guided program)" : "1:1 coaching"}`,
+    `Ready to start: ${lead.readyToApply ? "Yes" : "No"}`,
     `Summary: ${oneParagraph(lead.summary)}`,
   ].join("\n");
   const kept = existing.split(/\n\n+/).filter(section => section.trim() && !section.startsWith(CHAT_MARKER));
@@ -191,22 +196,132 @@ export function mergeChatNotes(existing: string, lead: ChatLead): string {
  * moves a lead that has started applying back to a chat stage.
  */
 export async function upsertChatLead(lead: ChatLead): Promise<AirtableRecord> {
-  const stage = lead.readyToApply ? "Chat — ready to apply" : "Chat lead";
+  const stage = lead.next === "remap" ? "Chat — Remap interest" : lead.readyToApply ? "Chat — ready to apply" : "Chat lead";
   const existing = await findLeadByEmail(lead.email);
   const notes = mergeChatNotes(String(existing?.fields.Notes ?? ""), lead);
 
   if (existing) {
     const fields: Record<string, unknown> = { Notes: notes };
-    if (!String(existing.fields["Funnel Stage"] ?? "").startsWith("Application")) fields["Funnel Stage"] = stage;
+    const current = String(existing.fields["Funnel Stage"] ?? "");
+    if (!current.startsWith("Application") && !current.startsWith("Remap")) fields["Funnel Stage"] = stage;
     if (!existing.fields["Lead Name"]) fields["Lead Name"] = lead.name;
     return updateLead(existing.id, fields);
   }
   return createLead({
     "Lead Name": lead.name,
     Email: lead.email,
-    Source: "jayleefit.com Ask Jay chat",
+    Source: lead.source ?? "jayleefit.com Ask Jay chat",
     "Created Date": new Date().toISOString().slice(0, 10),
     "Funnel Stage": stage,
     Notes: notes,
   });
+}
+
+// ── Remap orders and client records ─────────────────────────────────────────
+
+const remapTable = () => process.env.AIRTABLE_REMAP_TABLE || "Remap Orders";
+const clientsTable = () => process.env.AIRTABLE_CLIENTS_TABLE || "Clients";
+const nutritionTable = () => process.env.AIRTABLE_NUTRITION_TABLE || "Nutrition Plans";
+const progressTable = () => process.env.AIRTABLE_PROGRESS_TABLE || "Progress Tracking";
+
+export type { AirtableRecord };
+
+const formulaString = (value: string) => `'${value.replace(/\\/g, "\\\\").replace(/'/g, "\\'")}'`;
+
+async function findOne(table: string, formula: string): Promise<AirtableRecord | null> {
+  const params = new URLSearchParams({ filterByFormula: formula, maxRecords: "1" });
+  const data = await airtable(`?${params}`, {}, table);
+  return data.records?.[0] ?? null;
+}
+
+async function create(table: string, fields: Record<string, unknown>): Promise<AirtableRecord> {
+  const data = await airtable("", { method: "POST", body: JSON.stringify({ records: [{ fields }], typecast: true }) }, table);
+  return data.records[0];
+}
+
+async function update(table: string, id: string, fields: Record<string, unknown>): Promise<AirtableRecord> {
+  const data = await airtable("", { method: "PATCH", body: JSON.stringify({ records: [{ id, fields }], typecast: true }) }, table);
+  return data.records[0];
+}
+
+export const createRemapOrder = (fields: Record<string, unknown>) => create(remapTable(), fields);
+export const updateRemapOrder = (id: string, fields: Record<string, unknown>) => update(remapTable(), id, fields);
+export const findRemapOrderByToken = (token: string) => findOne(remapTable(), `{Token} = ${formulaString(token)}`);
+
+export const findClientByEmail = (email: string) =>
+  findOne(clientsTable(), `LOWER({Email}) = ${formulaString(email.toLowerCase())}`);
+
+/** Background on a buyer that Opus can use: their lead notes, client goals, and recent progress. */
+export async function clientContext(email: string): Promise<{ lead: AirtableRecord | null; client: AirtableRecord | null; progress: AirtableRecord[] }> {
+  const [lead, client] = await Promise.all([findLeadByEmail(email), findClientByEmail(email)]);
+  let progress: AirtableRecord[] = [];
+  const ids = (client?.fields["Progress Tracking"] as string[] | undefined) ?? [];
+  if (ids.length) {
+    const params = new URLSearchParams({
+      filterByFormula: `OR(${ids.slice(-20).map(id => `RECORD_ID() = ${formulaString(id)}`).join(", ")})`,
+      "sort[0][field]": "Date",
+      "sort[0][direction]": "desc",
+      maxRecords: "5",
+    });
+    progress = (await airtable(`?${params}`, {}, progressTable())).records ?? [];
+  }
+  return { lead, client, progress };
+}
+
+export type DeliveredRemap = {
+  name: string;
+  email: string;
+  goalSummary: string;
+  source: string;
+  startDate: string;
+  endDate: string;
+  proteinG: number;
+  carbsG: number;
+  fatG: number;
+  targetCalories: number;
+  nutritionNotes: string;
+};
+
+/**
+ * Files a delivered Remap where the coaching side already looks: the client's
+ * record, a Nutrition Plan with gram targets (Airtable computes calories and
+ * percentages), and the lead's funnel stage.
+ */
+export async function recordRemapDelivery(r: DeliveredRemap): Promise<void> {
+  const existing = await findClientByEmail(r.email);
+  const client = existing
+    ? existing.fields.Goals ? existing : await update(clientsTable(), existing.id, { Goals: r.goalSummary })
+    : await create(clientsTable(), {
+        "Client Name": r.name,
+        Email: r.email,
+        Goals: r.goalSummary,
+        "Program Start Date": r.startDate,
+        Tags: ["Remap"],
+      });
+
+  await create(nutritionTable(), {
+    "Meal Plan Name": `Remap — ${r.name} (${r.startDate})`,
+    Client: [client.id],
+    "Protein (g)": r.proteinG,
+    "Carbs (g)": r.carbsG,
+    "Fat (g)": r.fatG,
+    Macros: `${r.targetCalories} kcal · P ${r.proteinG}g · C ${r.carbsG}g · F ${r.fatG}g`,
+    "Nutrition Notes": r.nutritionNotes,
+    "Plan Start Date": r.startDate,
+    "Plan End Date": r.endDate,
+  });
+
+  const lead = await findLeadByEmail(r.email);
+  if (lead) {
+    await updateLead(lead.id, { "Funnel Stage": "Remap purchased", Clients: Array.from(new Set([...((lead.fields.Clients as string[]) ?? []), client.id])) });
+  } else {
+    await createLead({
+      "Lead Name": r.name,
+      Email: r.email,
+      Source: r.source,
+      "Created Date": r.startDate,
+      "Funnel Stage": "Remap purchased",
+      Clients: [client.id],
+    });
+  }
 }

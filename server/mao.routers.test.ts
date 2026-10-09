@@ -64,6 +64,7 @@ describe("site.capabilities", () => {
       applicationIntake: Boolean(process.env.AIRTABLE_API_TOKEN && process.env.AIRTABLE_BASE_ID),
       paymentReporting: Boolean(process.env.AIRTABLE_API_TOKEN && process.env.AIRTABLE_BASE_ID),
       aiChat: Boolean(process.env.ANTHROPIC_API_KEY),
+      remapCheckout: false,
     });
     expect(Object.values(result).every(v => typeof v === "boolean")).toBe(true);
   });
@@ -152,14 +153,14 @@ describe("chat.send", () => {
     vi.stubEnv("ANTHROPIC_API_KEY", "sk-test");
     vi.stubEnv("AIRTABLE_API_TOKEN", "pat-test");
     vi.stubEnv("AIRTABLE_BASE_ID", "appTest");
-    const lead = { name: "Sam", email: "sam@example.com", goal: "Lose fat", summary: "Busy dad.", readyToApply: true };
+    const lead = { name: "Sam", email: "sam@example.com", goal: "Lose fat", summary: "Busy dad.", readyToApply: true, next: "remap" as const };
     let saveLead: (l: typeof lead) => Promise<void> = async () => {};
     askJay.mockImplementation(async (_history, save) => { saveLead = save; return { reply: "Saved." }; });
 
-    await appRouter.createCaller(createPublicContext()).chat.send(hello);
+    await appRouter.createCaller(createPublicContext()).chat.send({ ...hello, source: "ig" });
     for (let i = 0; i < 3; i++) await saveLead(lead);
     expect(upsertChatLead).toHaveBeenCalledTimes(3);
-    expect(upsertChatLead).toHaveBeenCalledWith(lead);
+    expect(upsertChatLead).toHaveBeenCalledWith({ ...lead, source: "Instagram DM → jayleefit.com Ask Jay chat" });
     await expect(saveLead(lead)).rejects.toThrow(/Too many saves/);
   });
 
@@ -171,6 +172,25 @@ describe("chat.send", () => {
     await appRouter.createCaller(createPublicContext()).chat.send(hello);
     await expect(saveLead({})).rejects.toThrow(/isn't connected/);
     expect(upsertChatLead).not.toHaveBeenCalled();
+  });
+});
+
+describe("remap", () => {
+  it("won't open checkout until Stripe, the price, Airtable and Claude are all set", async () => {
+    vi.stubEnv("STRIPE_SECRET_KEY", "");
+    const caller = appRouter.createCaller(createPublicContext());
+    await expect(caller.remap.offer()).resolves.toMatchObject({ available: false });
+    await expect(caller.remap.checkout({
+      name: "Sam", email: "sam@example.com", sex: "male", age: 35, heightCm: 180, weightKg: 90, units: "imperial",
+      goal: "fat-loss", experience: "beginner", activity: "light", daysPerWeek: 3, sessionMinutes: 45, equipment: "bodyweight",
+      injuries: "", foodNotes: "", notes: "",
+    })).rejects.toThrow(/isn't open yet/);
+    vi.unstubAllEnvs();
+  });
+
+  it("rejects malformed program links before touching storage", async () => {
+    const caller = appRouter.createCaller(createPublicContext());
+    await expect(caller.remap.status({ token: "../../etc" })).rejects.toThrow();
   });
 });
 

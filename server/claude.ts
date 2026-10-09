@@ -1,12 +1,10 @@
 import Anthropic from "@anthropic-ai/sdk";
 
 /**
- * The Ask Jay assistant runs on the Claude API. It is switched on when
- * ANTHROPIC_API_KEY is set; without it the site shows the browser-only plan
- * builder instead.
+ * Claude API access, shared by Ask Jay (free, Haiku) and Remap builds (paid,
+ * Opus). Switched on when ANTHROPIC_API_KEY is set; without it the site shows
+ * the browser-only plan builder instead of the chat.
  */
-
-export const CLAUDE_MODEL = process.env.ANTHROPIC_MODEL || "claude-opus-5-5";
 
 export function claudeConfigured(): boolean {
   return Boolean(process.env.ANTHROPIC_API_KEY);

@@ -6,6 +6,8 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
 import { airtableConfigured, upsertChatLead } from "./airtable";
 import { askJay, chatInput } from "./chat";
+import { remapAvailable, remapIntake, remapPriceCents, remapStatus, startCheckout } from "./remap";
+import { sourceLabel } from "@shared/source";
 import { claudeConfigured, takeSlot } from "./claude";
 import {
   upsertApplication,
@@ -23,6 +25,13 @@ const PRICING = {
 // Public-use caps per visitor (IP) per hour.
 const CHAT_MESSAGES_PER_HOUR = 30;
 const LEADS_PER_HOUR = 3;
+const CHECKOUTS_PER_HOUR = 10;
+
+/** The site's public origin for Stripe return links. Prefer the configured one over request headers. */
+function siteOrigin(req: { protocol: string; get(name: string): string | undefined }): string {
+  const configured = process.env.PUBLIC_SITE_URL?.replace(/\/+$/, "");
+  return configured || `${req.protocol}://${req.get("host")}`;
+}
 
 /** What the site can do in this deployment. Also served at /api/health. */
 export function siteCapabilities() {
@@ -30,6 +39,7 @@ export function siteCapabilities() {
     applicationIntake: airtableConfigured(),
     paymentReporting: airtableConfigured(),
     aiChat: claudeConfigured(),
+    remapCheckout: remapAvailable(),
   };
 }
 
@@ -137,8 +147,33 @@ export const appRouter = router({
         return askJay(input.messages, async lead => {
           if (!airtableConfigured()) throw new Error("Lead storage isn't connected yet.");
           if (!takeSlot("lead", visitor, LEADS_PER_HOUR)) throw new Error("Too many saves from this visitor this hour.");
-          await upsertChatLead(lead);
+          await upsertChatLead({ ...lead, source: sourceLabel(input.source, "jayleefit.com Ask Jay chat") });
         });
+      }),
+  }),
+
+  // ── Remap (paid program) ───────────────────────────────────────────────
+  remap: router({
+    offer: publicProcedure.query(() => ({ available: remapAvailable(), priceCents: remapPriceCents() })),
+
+    checkout: publicProcedure
+      .input(remapIntake)
+      .mutation(async ({ input, ctx }) => {
+        if (!remapAvailable()) {
+          throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Remap checkout isn't open yet. Ask Jay or apply below in the meantime." });
+        }
+        if (!takeSlot("checkout", ctx.req.ip || "unknown", CHECKOUTS_PER_HOUR)) {
+          throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Too many checkout attempts. Please try again in a bit." });
+        }
+        return startCheckout(input, siteOrigin(ctx.req));
+      }),
+
+    status: publicProcedure
+      .input(z.object({ token: z.string().min(20).max(64).regex(/^[A-Za-z0-9_-]+$/), sessionId: z.string().max(200).optional() }))
+      .query(async ({ input }) => {
+        const status = await remapStatus(input.token, input.sessionId);
+        if (!status) throw new TRPCError({ code: "NOT_FOUND", message: "We couldn't find that program link." });
+        return status;
       }),
   }),
 

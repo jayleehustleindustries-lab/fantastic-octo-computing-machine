@@ -144,7 +144,15 @@ describe("upsertChatLead → Airtable Lead Pipeline", () => {
       Source: "jayleefit.com Ask Jay chat",
       "Funnel Stage": "Chat — ready to apply",
     });
-    expect(fields.Notes).toBe("── Ask Jay chat ──\nGoal: Lose 20 lbs\nReady to apply: Yes\nSummary: Dad of two.\nTrains at home 4x a week.");
+    expect(fields.Notes).toBe("── Ask Jay chat ──\nGoal: Lose 20 lbs\nInterested in: 1:1 coaching\nReady to start: Yes\nSummary: Dad of two.\nTrains at home 4x a week.");
+  });
+
+  it("tags Remap interest and the social source", async () => {
+    mockAirtable(null);
+    await upsertChatLead({ ...lead, next: "remap", source: "Instagram DM → jayleefit.com Ask Jay chat" });
+    const fields = calls[1].body.records[0].fields;
+    expect(fields).toMatchObject({ "Funnel Stage": "Chat — Remap interest", Source: "Instagram DM → jayleefit.com Ask Jay chat" });
+    expect(fields.Notes).toContain("Interested in: Remap (self-guided program)");
   });
 
   it("refreshes the chat summary without touching application answers or stage", async () => {
