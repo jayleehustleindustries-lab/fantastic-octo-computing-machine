@@ -4,12 +4,12 @@ import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
-import { airtableConfigured } from "./airtable";
-import { claudeConfigured, generateBlueprint, takeBlueprintSlot } from "./claude";
+import { airtableConfigured, upsertChatLead } from "./airtable";
+import { askJay, chatInput } from "./chat";
+import { claudeConfigured, takeSlot } from "./claude";
 import {
   upsertApplication,
   getApplicationByEmail,
-  createAiPlan,
   createPaymentReport,
 } from "./db";
 
@@ -20,19 +20,16 @@ const PRICING = {
   LEGACY_PRICE: process.env.LEGACY_PRICE ?? "Contact for Pricing",
 };
 
-const MAO_SYSTEM_PROMPT = `You are the MAO Engine, the AI programming assistant for Coach Jay of JayLee Fit (JayLee Hustle Industries). Generate a personalized 7-day training week in the MAO style: direct, disciplined, no fluff, second person ("you"). Structure the output as:
-1) OPERATOR READOUT — 2-3 sentence assessment of the user's inputs.
-2) RECOMMENDED TRACK — one of FOUNDATION / RECOMP / LEGACY with one-line rationale.
-3) THE WEEK — a day-by-day split (MON-SUN) with exercises, sets x reps, rest, and a one-line coach's note per day. Respect stated availability, focus area, and any injuries/limitations (substitute safe alternatives and say why).
-4) GUARDRAILS — 3 short rules on nutrition, recovery, and consistency.
-End with: "This is a sample blueprint. Your full MAO program is built after qualification. — MAO ENGINE". Keep it under 600 words. Never give medical advice; advise consulting a professional for injuries.`;
+// Public-use caps per visitor (IP) per hour.
+const CHAT_MESSAGES_PER_HOUR = 30;
+const LEADS_PER_HOUR = 3;
 
 /** What the site can do in this deployment. Also served at /api/health. */
 export function siteCapabilities() {
   return {
     applicationIntake: airtableConfigured(),
     paymentReporting: airtableConfigured(),
-    aiBlueprints: claudeConfigured(),
+    aiChat: claudeConfigured(),
   };
 }
 
@@ -122,52 +119,29 @@ export const appRouter = router({
       }),
   }),
 
-  // ── AI Engine ────────────────────────────────────────────────────────────
-  aiEngine: router({
-    generatePlan: publicProcedure
-      .input(z.object({
-        name: z.string().optional(),
-        goals: z.string().min(1),
-        fitnessLevel: z.enum(["Beginner", "Intermediate", "Advanced"]),
-        availability: z.string().min(1),
-        focusArea: z.string().optional(),
-        limitations: z.string().optional(),
-      }))
+  // ── Ask Jay assistant ──────────────────────────────────────────────────
+  chat: router({
+    send: publicProcedure
+      .input(chatInput)
       .mutation(async ({ input, ctx }) => {
-        if (!takeBlueprintSlot(ctx.req.ip || "unknown")) {
+        const visitor = ctx.req.ip || "unknown";
+        if (!claudeConfigured()) {
+          throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Ask Jay isn't switched on yet. You can still apply below." });
+        }
+        if (!takeSlot("chat", visitor, CHAT_MESSAGES_PER_HOUR)) {
           throw new TRPCError({
             code: "TOO_MANY_REQUESTS",
-            message: "You've generated 5 sample plans this hour. Try again later, or apply for your full program.",
+            message: "That's a lot of questions for one hour. Take a breather, or apply and Coach Jay will answer you directly.",
           });
         }
-
-        const userMessage = [
-          `Name: ${input.name ?? "Operator"}`,
-          `Goals: ${input.goals}`,
-          `Fitness Level: ${input.fitnessLevel}`,
-          `Availability: ${input.availability}`,
-          input.focusArea ? `Focus Area: ${input.focusArea}` : null,
-          input.limitations ? `Injuries/Limitations: ${input.limitations}` : null,
-        ].filter(Boolean).join("\n");
-
-        const planOutput = await generateBlueprint(MAO_SYSTEM_PROMPT, userMessage);
-
-        // Persist to DB
-        await createAiPlan({
-          name: input.name,
-          goals: input.goals,
-          fitnessLevel: input.fitnessLevel,
-          availability: input.availability,
-          focusArea: input.focusArea,
-          limitations: input.limitations,
-          planOutput,
+        return askJay(input.messages, async lead => {
+          if (!airtableConfigured()) throw new Error("Lead storage isn't connected yet.");
+          if (!takeSlot("lead", visitor, LEADS_PER_HOUR)) throw new Error("Too many saves from this visitor this hour.");
+          await upsertChatLead(lead);
         });
-
-        return { success: true, plan: planOutput };
       }),
   }),
 
-  // ── Payment Reports ──────────────────────────────────────────────────────
   payment: router({
     report: publicProcedure
       .input(z.object({

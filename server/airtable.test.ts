@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createPaymentReport, upsertApplication } from "./db";
-import { mergePhaseNotes } from "./airtable";
+import { mergePhaseNotes, upsertChatLead } from "./airtable";
 
 type Call = { url: string; rawUrl: string; method: string; body: any };
 let calls: Call[];
@@ -128,5 +128,42 @@ describe("createPaymentReport → Airtable Payment Reports", () => {
     });
     expect(fields["Reported Date"]).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(fields).not.toHaveProperty("Note");
+  });
+});
+
+describe("upsertChatLead → Airtable Lead Pipeline", () => {
+  const lead = { name: "Sam Rivera", email: "sam@example.com", goal: "Lose 20 lbs", summary: "Dad of two.\n\nTrains at home 4x a week.", readyToApply: true };
+
+  it("creates a chat lead with the conversation summary", async () => {
+    mockAirtable(null);
+    await upsertChatLead(lead);
+    const fields = calls[1].body.records[0].fields;
+    expect(fields).toMatchObject({
+      "Lead Name": "Sam Rivera",
+      Email: "sam@example.com",
+      Source: "jayleefit.com Ask Jay chat",
+      "Funnel Stage": "Chat — ready to apply",
+    });
+    expect(fields.Notes).toBe("── Ask Jay chat ──\nGoal: Lose 20 lbs\nReady to apply: Yes\nSummary: Dad of two.\nTrains at home 4x a week.");
+  });
+
+  it("refreshes the chat summary without touching application answers or stage", async () => {
+    mockAirtable({
+      id: "recAPP",
+      fields: {
+        "Lead Name": "Sam R.",
+        "Funnel Stage": "Application — phase 2 of 4",
+        Notes: "── Ask Jay chat ──\nGoal: old\n\n── Phase 1 — Identity ──\nFull name: Sam R.",
+      },
+    });
+    await upsertChatLead({ ...lead, readyToApply: false });
+    const update = calls[1];
+    expect(update.method).toBe("PATCH");
+    const fields = update.body.records[0].fields;
+    expect(fields).not.toHaveProperty("Funnel Stage");
+    expect(fields).not.toHaveProperty("Lead Name");
+    expect(fields.Notes).toMatch(/^── Ask Jay chat ──\nGoal: Lose 20 lbs/);
+    expect(fields.Notes).not.toContain("Goal: old");
+    expect(fields.Notes).toContain("── Phase 1 — Identity ──\nFull name: Sam R.");
   });
 });

@@ -157,3 +157,56 @@ export function mergePhaseNotes(existing: string, phase: number, block: string) 
 export function funnelStageFor(furthestPhase: number): string {
   return furthestPhase >= 4 ? "Application complete" : `Application — phase ${furthestPhase} of 4`;
 }
+
+// ── Leads from the Ask Jay assistant ────────────────────────────────────────
+
+const CHAT_MARKER = "── Ask Jay chat ──";
+
+export type ChatLead = {
+  name: string;
+  email: string;
+  goal: string;
+  summary: string;
+  readyToApply: boolean;
+};
+
+/** Notes sections are split on blank lines, so keep each value on one paragraph. */
+const oneParagraph = (text: string) => text.replace(/\s*\n\s*\n\s*/g, "\n").trim();
+
+/** Puts the latest chat summary at the top of Notes, replacing any earlier one. */
+export function mergeChatNotes(existing: string, lead: ChatLead): string {
+  const block = [
+    CHAT_MARKER,
+    `Goal: ${oneParagraph(lead.goal)}`,
+    `Ready to apply: ${lead.readyToApply ? "Yes" : "No"}`,
+    `Summary: ${oneParagraph(lead.summary)}`,
+  ].join("\n");
+  const kept = existing.split(/\n\n+/).filter(section => section.trim() && !section.startsWith(CHAT_MARKER));
+  return [block, ...kept].join("\n\n");
+}
+
+/**
+ * Saves a visitor who asked Ask Jay to pass their details to Coach Jay. Uses the
+ * same one-record-per-email Lead Pipeline row as the application, and never
+ * moves a lead that has started applying back to a chat stage.
+ */
+export async function upsertChatLead(lead: ChatLead): Promise<AirtableRecord> {
+  const stage = lead.readyToApply ? "Chat — ready to apply" : "Chat lead";
+  const existing = await findLeadByEmail(lead.email);
+  const notes = mergeChatNotes(String(existing?.fields.Notes ?? ""), lead);
+
+  if (existing) {
+    const fields: Record<string, unknown> = { Notes: notes };
+    if (!String(existing.fields["Funnel Stage"] ?? "").startsWith("Application")) fields["Funnel Stage"] = stage;
+    if (!existing.fields["Lead Name"]) fields["Lead Name"] = lead.name;
+    return updateLead(existing.id, fields);
+  }
+  return createLead({
+    "Lead Name": lead.name,
+    Email: lead.email,
+    Source: "jayleefit.com Ask Jay chat",
+    "Created Date": new Date().toISOString().slice(0, 10),
+    "Funnel Stage": stage,
+    Notes: notes,
+  });
+}

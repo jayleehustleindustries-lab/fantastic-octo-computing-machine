@@ -20,6 +20,7 @@ export function AgentModule({
   label,
   children,
   className = "",
+  bodyClassName = "",
 }: {
   code: string;
   name: string;
@@ -28,6 +29,7 @@ export function AgentModule({
   label?: string;
   children: ReactNode;
   className?: string;
+  bodyClassName?: string;
 }) {
   const led =
     status === "online"
@@ -51,7 +53,7 @@ export function AgentModule({
           {label ?? STATUS_LABEL[status]}
         </span>
       </div>
-      <div className="relative">{children}</div>
+      <div className={`relative ${bodyClassName}`}>{children}</div>
     </div>
   );
 }

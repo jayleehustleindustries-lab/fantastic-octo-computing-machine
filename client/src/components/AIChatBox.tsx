@@ -57,6 +57,22 @@ export type AIChatBoxProps = {
    * Click to send directly
    */
   suggestedPrompts?: string[];
+
+  /**
+   * Content shown between the messages and the input (e.g. a call to action)
+   */
+  footer?: React.ReactNode;
+
+  /**
+   * Accessible label for the message input
+   */
+  inputLabel?: string;
+
+  /**
+   * Hold the newest reply at the top of a tall chat (default). Turn off for
+   * small panels, where the reserved space shows up as a large gap.
+   */
+  reserveSpaceForReply?: boolean;
 };
 
 /**
@@ -119,6 +135,9 @@ export function AIChatBox({
   height = "600px",
   emptyStateMessage = "Start a conversation with AI",
   suggestedPrompts,
+  footer,
+  inputLabel = "Message",
+  reserveSpaceForReply = true,
 }: AIChatBoxProps) {
   const [input, setInput] = useState("");
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -133,7 +152,7 @@ export function AIChatBox({
   const [minHeightForLastMessage, setMinHeightForLastMessage] = useState(0);
 
   useEffect(() => {
-    if (containerRef.current && inputAreaRef.current) {
+    if (reserveSpaceForReply && containerRef.current && inputAreaRef.current) {
       const containerHeight = containerRef.current.offsetHeight;
       const inputHeight = inputAreaRef.current.offsetHeight;
       const scrollAreaHeight = containerHeight - inputHeight;
@@ -164,6 +183,11 @@ export function AIChatBox({
       });
     }
   };
+
+  // Follow new replies as they arrive
+  useEffect(() => {
+    scrollToBottom();
+  }, [displayMessages.length, isLoading]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -302,6 +326,8 @@ export function AIChatBox({
         )}
       </div>
 
+      {footer}
+
       {/* Input Area */}
       <form
         ref={inputAreaRef}
@@ -314,6 +340,7 @@ export function AIChatBox({
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
+          aria-label={inputLabel}
           className="flex-1 max-h-32 resize-none min-h-9"
           rows={1}
         />

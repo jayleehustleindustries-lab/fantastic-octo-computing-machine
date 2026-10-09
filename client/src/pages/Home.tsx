@@ -6,6 +6,8 @@ import { AgentModule } from "@/components/hud/AgentModule";
 import { BootLine } from "@/components/hud/BootLine";
 import { HudBackdrop } from "@/components/hud/HudBackdrop";
 import { HudReticle } from "@/components/hud/HudReticle";
+import { AskJay, openAskJay, type AskJayLead } from "@/components/hud/AskJay";
+import { COACH, SERVICES, TERMS, TIERS } from "@shared/maoContent";
 
 // ── Versioned campaign assets served with the application ──────────────────
 const ASSETS = {
@@ -15,103 +17,14 @@ const ASSETS = {
   galleryTheVisionary: "/images/the-visionary.jpg",
 };
 
-// ── Training split data ──────────────────────────────────────────────────────
-const TRAINING_SPLIT = [
-  {
-    day: "MON", label: "UPPER BODY — PUSH", muscles: "Chest, Shoulders, Triceps", count: 8,
-    lifts: [
-      { exercise: "Barbell Bench Press", sets: 4, reps: "6–8", rest: "2 min", note: "Primary strength movement — control the descent, 2 sec down" },
-      { exercise: "Incline Dumbbell Press", sets: 4, reps: "10–12", rest: "90s", note: "Feel the upper chest stretch at the bottom of every rep" },
-      { exercise: "Cable Chest Fly", sets: 3, reps: "12–15", rest: "60s", note: "Full stretch and squeeze — don't rush these" },
-      { exercise: "Overhead Dumbbell Press", sets: 4, reps: "10–12", rest: "90s", note: "Keep core braced, don't arch the lower back" },
-      { exercise: "Cable Lateral Raises", sets: 4, reps: "15–20", rest: "45s", note: "Light weight, full range — these build width" },
-      { exercise: "Rear Delt Cable Fly", sets: 3, reps: "15", rest: "45s", note: "Elbows slightly bent, lead with the elbows" },
-      { exercise: "Tricep Rope Pushdowns", sets: 4, reps: "12–15", rest: "60s", note: "Squeeze hard at the bottom, full extension" },
-      { exercise: "Overhead Tricep Extension", sets: 3, reps: "12", rest: "60s", note: "Long head emphasis — keep elbows tight" },
-    ]
-  },
-  {
-    day: "TUE", label: "LOWER BODY — SQUAT", muscles: "Quads, Glutes, Hamstrings", count: 7,
-    lifts: [
-      { exercise: "Barbell Back Squat", sets: 4, reps: "5–6", rest: "2.5 min", note: "Top strength slot of the week — brace hard, hit depth, drive through mid-foot" },
-      { exercise: "Romanian Deadlift", sets: 4, reps: "8–10", rest: "2 min", note: "Push the hips back, bar stays on the thighs — feel the hamstrings load" },
-      { exercise: "Walking Lunges", sets: 3, reps: "12/leg", rest: "90s", note: "Long strides, torso tall — control the knee, no wobble" },
-      { exercise: "Leg Press", sets: 3, reps: "12–15", rest: "90s", note: "Full range without the lower back rolling off the pad" },
-      { exercise: "Seated Leg Curl", sets: 3, reps: "12–15", rest: "60s", note: "Squeeze a full second at the bottom of every rep" },
-      { exercise: "Standing Calf Raise", sets: 4, reps: "15–20", rest: "45s", note: "Pause at the stretch, explode up — no bouncing" },
-      { exercise: "Hanging Knee Raise", sets: 3, reps: "12–15", rest: "60s", note: "Slow and controlled — no swinging, exhale at the top" },
-    ]
-  },
-  {
-    day: "WED", label: "UPPER BODY — PULL", muscles: "Back, Rear Delts, Biceps", count: 7,
-    lifts: [
-      { exercise: "Weighted Pull-Ups", sets: 4, reps: "6–8", rest: "2 min", note: "Dead hang to chest-to-bar intent — add load only when all reps are clean" },
-      { exercise: "Barbell Row", sets: 4, reps: "8–10", rest: "2 min", note: "Hinge at 45 degrees, pull to the lower ribs — no torso heave" },
-      { exercise: "Lat Pulldown", sets: 3, reps: "10–12", rest: "90s", note: "Drive the elbows down, chest up — let the lats do the work" },
-      { exercise: "Chest-Supported Row", sets: 3, reps: "12", rest: "90s", note: "Chest glued to the pad kills the momentum — strict reps only" },
-      { exercise: "Face Pulls", sets: 3, reps: "15–20", rest: "45s", note: "Rope to the forehead, thumbs back — this is shoulder insurance" },
-      { exercise: "Barbell Curl", sets: 3, reps: "10–12", rest: "60s", note: "Elbows pinned to your sides — no swinging the weight up" },
-      { exercise: "Hammer Curl", sets: 3, reps: "12", rest: "60s", note: "Neutral grip, slow negative — builds the forearm and brachialis" },
-    ]
-  },
-  {
-    day: "THU", label: "CONDITIONING + CORE", muscles: "Engine, Trunk", count: 6,
-    lifts: [
-      { exercise: "Rower or Bike Intervals", sets: 6, reps: "60s hard / 90s easy", rest: "—", note: "Hard means hard — the last two intervals should be a negotiation" },
-      { exercise: "Kettlebell Swings", sets: 4, reps: "20", rest: "60s", note: "Snap the hips, arms are just hooks — power comes from the hinge" },
-      { exercise: "Farmer's Carry", sets: 4, reps: "40m", rest: "90s", note: "Heavy. Shoulders packed, walk tall — grip and trunk under load" },
-      { exercise: "Plank", sets: 3, reps: "60s", rest: "45s", note: "Squeeze glutes and abs — a plank is a full-body contraction, not a rest" },
-      { exercise: "Pallof Press", sets: 3, reps: "12/side", rest: "45s", note: "Resist the rotation — slow press out, slow return" },
-      { exercise: "Ab Wheel Rollout", sets: 3, reps: "8–12", rest: "60s", note: "Only roll as far as you can keep the lower back flat" },
-    ]
-  },
-  {
-    day: "FRI", label: "LOWER BODY — HINGE", muscles: "Posterior Chain, Glutes", count: 7,
-    lifts: [
-      { exercise: "Trap Bar Deadlift", sets: 4, reps: "5–6", rest: "2.5 min", note: "Second strength slot — wedge in tight, push the floor away" },
-      { exercise: "Front Squat", sets: 3, reps: "8", rest: "2 min", note: "Elbows high, torso vertical — quads and upper back earn their pay" },
-      { exercise: "Hip Thrust", sets: 4, reps: "10–12", rest: "90s", note: "Full lockout with a one-second squeeze — chin tucked, ribs down" },
-      { exercise: "Bulgarian Split Squat", sets: 3, reps: "10/leg", rest: "90s", note: "The one everybody skips — that's exactly why we do it" },
-      { exercise: "Back Extension", sets: 3, reps: "12–15", rest: "60s", note: "Squeeze glutes at the top, don't hyperextend the spine" },
-      { exercise: "Seated Calf Raise", sets: 4, reps: "15–20", rest: "45s", note: "Different angle than Tuesday — pause every rep at the stretch" },
-      { exercise: "Weighted Decline Sit-Up", sets: 3, reps: "12–15", rest: "60s", note: "Control down, drive up — add load before adding reps" },
-    ]
-  },
-  {
-    day: "SAT", label: "FULL BODY — OPERATOR CIRCUIT", muscles: "Total Body, Engine", count: 5,
-    lifts: [
-      { exercise: "Dumbbell Thrusters", sets: 5, reps: "12", rest: "Circuit", note: "Squat to press in one motion — breathe at the top, keep moving" },
-      { exercise: "Renegade Rows", sets: 5, reps: "8/side", rest: "Circuit", note: "Hips square to the floor — the anti-rotation is the exercise" },
-      { exercise: "Push-Ups", sets: 5, reps: "15–20", rest: "Circuit", note: "Chest to the floor, full lockout — no half reps in the circuit" },
-      { exercise: "Goblet Reverse Lunge", sets: 5, reps: "10/leg", rest: "Circuit", note: "Bell tight to the chest, knee kisses the floor — stay tall" },
-      { exercise: "Sled Push or Hill Sprint", sets: 5, reps: "20m / 15s", rest: "2 min between rounds", note: "Finish the round with intent — this is where the week is won" },
-    ]
-  },
-  {
-    day: "SUN", label: "ACTIVE RECOVERY — RESET", muscles: "Recovery, Mobility", count: 5,
-    lifts: [
-      { exercise: "Zone 2 Walk (outdoor)", sets: 1, reps: "45–60 min", rest: "—", note: "Conversational pace, phone on do-not-disturb — this is thinking time" },
-      { exercise: "Couch Stretch", sets: 2, reps: "90s/side", rest: "—", note: "Hip flexors take the beating all week — pay them back here" },
-      { exercise: "90/90 Hip Switches", sets: 2, reps: "10/side", rest: "—", note: "Smooth transitions, no hands if you can — own the position" },
-      { exercise: "Thoracic Openers", sets: 2, reps: "10/side", rest: "—", note: "Desk posture dies here — exhale into every rotation" },
-      { exercise: "Box Breathing", sets: 1, reps: "5 min", rest: "—", note: "4s in, 4s hold, 4s out, 4s hold — recovery is a skill, train it" },
-    ]
-  },
-];
-
 // ── Nav component ────────────────────────────────────────────────────────────
 function Nav({ activeSection }: { activeSection: string }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const links = [
-    { label: "SERVICES", href: "#services" },
-    { label: "APPLY", href: "#apply" },
-    { label: "INVESTMENT", href: "#investment" },
-    { label: "SAMPLE SPLIT", href: "#sample-split" },
-    { label: "PROGRAM ARCHITECT", href: "#ai-engine" },
+    { label: "WHAT YOU GET", href: "#services" },
+    { label: "PACKAGES", href: "#investment" },
     { label: "COACH JAY", href: "#coach-jay" },
-    { label: "PROOF", href: "#proof" },
-    { label: "GALLERY", href: "#gallery" },
-    { label: "PAY INVOICE", href: "#pay-invoice" },
+    { label: "APPLY", href: "#apply" },
   ];
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-hud/20">
@@ -125,7 +38,10 @@ function Nav({ activeSection }: { activeSection: string }) {
               {l.label}
             </a>
           ))}
-          <a href="#apply" className="ml-2 px-3 py-1.5 bg-hud-deep text-white font-['JetBrains_Mono'] text-[10px] tracking-widest hover:bg-[#1f54e6] hover:shadow-[0_0_24px_rgb(56_198_255/0.45)] transition-colors">
+          <button type="button" onClick={() => openAskJay()} className="ml-2 px-3 py-1.5 border border-hud/60 text-hud font-['JetBrains_Mono'] text-[10px] tracking-widest hover:bg-hud/10 transition-colors">
+            ASK JAY
+          </button>
+          <a href="#apply" className="px-3 py-1.5 bg-hud-deep text-white font-['JetBrains_Mono'] text-[10px] tracking-widest hover:bg-[#1f54e6] hover:shadow-[0_0_24px_rgb(56_198_255/0.45)] transition-colors">
             APPLY
           </a>
         </div>
@@ -145,8 +61,12 @@ function Nav({ activeSection }: { activeSection: string }) {
               {l.label}
             </a>
           ))}
+          <button type="button" onClick={() => { setMenuOpen(false); openAskJay(); }}
+            className="mt-4 px-6 py-3 border border-hud/60 text-hud font-['JetBrains_Mono'] text-sm tracking-widest">
+            ASK JAY
+          </button>
           <a href="#apply" onClick={() => setMenuOpen(false)}
-            className="mt-4 px-6 py-3 bg-hud-deep text-white font-['JetBrains_Mono'] text-sm tracking-widest">
+            className="px-6 py-3 bg-hud-deep text-white font-['JetBrains_Mono'] text-sm tracking-widest">
             APPLY NOW
           </a>
         </div>
@@ -191,7 +111,11 @@ function Section({ id, index, title, children, className = "" }: {
 }
 
 // ── 4-Phase Application Form ─────────────────────────────────────────────────
-function ApplyForm({ onQualified }: { onQualified: (pricing: Record<string, string>) => void }) {
+function ApplyForm({ onQualified, prefill }: {
+  onQualified: (pricing: Record<string, string>) => void;
+  /** Name and email handed over by Ask Jay; fills Phase 1 without overwriting typed answers. */
+  prefill?: AskJayLead | null;
+}) {
   const capabilities = trpc.site.capabilities.useQuery();
   const intakeAvailable = capabilities.data?.applicationIntake === true;
   const [phase, setPhase] = useState(1);
@@ -200,6 +124,11 @@ function ApplyForm({ onQualified }: { onQualified: (pricing: Record<string, stri
 
   // Phase 1 state
   const [p1, setP1] = useState({ fullName: "", phone: "", location: "" });
+  useEffect(() => {
+    if (!prefill) return;
+    setEmail(current => current || prefill.email);
+    setP1(current => (current.fullName ? current : { ...current, fullName: prefill.name }));
+  }, [prefill]);
   // Phase 2 state
   const [p2, setP2] = useState({ goal: "", trainingFrequency: "", trainingHistory: "", currentStats: "" });
   // Phase 3 state
@@ -438,156 +367,6 @@ function ApplyForm({ onQualified }: { onQualified: (pricing: Record<string, stri
   );
 }
 
-// ── AI Engine component ──────────────────────────────────────────────────────
-function AIEngine() {
-  const capabilities = trpc.site.capabilities.useQuery();
-  const aiAvailable = capabilities.data?.aiBlueprints === true;
-  const [diagnostic, setDiagnostic] = useState({ objective: "", operator: "", commitment: "" });
-  const [routeResult, setRouteResult] = useState<{ tier: string; rationale: string } | null>(null);
-  const [form, setForm] = useState({ name: "", goals: "", fitnessLevel: "Intermediate", availability: "", focusArea: "", limitations: "" });
-  const [plan, setPlan] = useState("");
-  const [showBlueprint, setShowBlueprint] = useState(false);
-
-  const generateMut = trpc.aiEngine.generatePlan.useMutation({
-    onSuccess: (data) => setPlan(data.plan),
-  });
-
-  function runDiagnostic() {
-    if (!diagnostic.objective || !diagnostic.operator || !diagnostic.commitment) return;
-    let tier = "FOUNDATION";
-    if (diagnostic.commitment === "5–7 HOURS") tier = "RECOMP";
-    if (diagnostic.commitment === "8+ HOURS") tier = "LEGACY";
-    if (diagnostic.objective === "ATHLETIC PERFORMANCE" || diagnostic.operator === "ATHLETE / COMPETITOR") {
-      if (tier === "FOUNDATION") tier = "RECOMP";
-      else if (tier === "RECOMP") tier = "LEGACY";
-    }
-    const rationale = `${diagnostic.objective.toLowerCase()} objective + ${diagnostic.operator.toLowerCase()} schedule + ${diagnostic.commitment}/week = the ${tier === "FOUNDATION" ? "entry-level FOUNDATION" : tier === "RECOMP" ? "flagship RECOMP" : "premium LEGACY"} track.`;
-    setRouteResult({ tier, rationale });
-    setShowBlueprint(true);
-  }
-
-  return (
-    <div className="grid lg:grid-cols-2 gap-8">
-      {/* Left: inputs */}
-      <div className="space-y-8">
-        {/* Rapid Diagnostic */}
-        <div className="border border-white/10 p-6">
-          <div className="font-['JetBrains_Mono'] text-xs text-hud tracking-widest mb-1">MAO ENGINE // 3-QUESTION DIAGNOSTIC</div>
-          <div className="font-['Bebas_Neue'] text-2xl text-white mb-1">3 QUESTIONS. ROUTED IN 90 SECONDS.</div>
-          <p className="font-['JetBrains_Mono'] text-xs text-white/50 mb-5">Three rapid-fire questions. The MAO Engine routes your goal, archetype, and time commitment into a recommended track — then unlocks the deep AI Blueprint generator below. No fluff. No 6-page form. Pull the trigger.</p>
-          <div className="space-y-4">
-            {[
-              { key: "objective", q: "WHAT IS YOUR PRIMARY OBJECTIVE?", opts: ["BODY RECOMPOSITION","RAW STRENGTH","LONGEVITY / HEALTH","ATHLETIC PERFORMANCE"] },
-              { key: "operator", q: "WHICH OPERATOR ARE YOU?", opts: ["FOUNDER / ENTREPRENEUR","EXECUTIVE / PROFESSIONAL","ATHLETE / COMPETITOR","BUSY PARENT / GRINDER"] },
-              { key: "commitment", q: "WEEKLY TIME COMMITMENT?", opts: ["2–4 HOURS","5–7 HOURS","8+ HOURS"] },
-            ].map(({ key, q, opts }) => (
-              <div key={key}>
-                <label className="block font-['JetBrains_Mono'] text-xs tracking-widest text-white/60 mb-2">{q}</label>
-                <div className="flex flex-wrap gap-2">
-                  {opts.map(opt => (
-                    <button key={opt} onClick={() => setDiagnostic(d => ({ ...d, [key]: opt }))}
-                      className={`px-3 py-1.5 font-['JetBrains_Mono'] text-[10px] tracking-wider border transition-colors ${diagnostic[key as keyof typeof diagnostic] === opt ? 'bg-hud-deep border-hud text-white' : 'border-white/20 text-white/60 hover:border-white/40'}`}>
-                      {opt}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ))}
-            <button onClick={runDiagnostic}
-              className="w-full py-2.5 bg-hud-deep text-white font-['JetBrains_Mono'] text-xs tracking-widest hover:bg-[#1f54e6] hover:shadow-[0_0_24px_rgb(56_198_255/0.45)] transition-colors">
-              RUN DIAGNOSTIC →
-            </button>
-          </div>
-          {routeResult && (
-            <div className="mt-5 border border-hud/40 p-4 bg-hud-deep/5">
-              <div className="font-['JetBrains_Mono'] text-xs text-hud mb-1">ROUTED // RECOMMENDED TRACK: {routeResult.tier}</div>
-              <p className="font-['JetBrains_Mono'] text-xs text-white/70 mb-3">{routeResult.rationale}</p>
-              <a href="#apply" className="font-['JetBrains_Mono'] text-xs text-hud hover:text-white tracking-widest">
-                APPLY FOR {routeResult.tier} →
-              </a>
-            </div>
-          )}
-        </div>
-
-        {/* Deep Blueprint form */}
-        {showBlueprint && (
-          <div className="border border-white/10 p-6 min-w-0">
-            <div className="font-['JetBrains_Mono'] text-xs text-hud tracking-widest mb-1">DEEP BLUEPRINT // AI POWERED ENGINE</div>
-            <div className="font-['Bebas_Neue'] text-2xl text-white mb-4">GENERATE YOUR BLUEPRINT</div>
-            {!capabilities.isPending && !aiAvailable && (
-              <div className="mb-4 border border-amber-400/40 bg-amber-400/5 p-3 font-['JetBrains_Mono'] text-xs text-amber-200">
-                LIVE AI BLUEPRINTS ARE TEMPORARILY OFFLINE. The rapid diagnostic remains available.
-              </div>
-            )}
-            <div className="space-y-4">
-              <div>
-                <label className="block font-['JetBrains_Mono'] text-xs tracking-widest text-white/60 mb-1">NAME (OPTIONAL)</label>
-                <input type="text" className="w-full bg-white/5 border border-white/20 text-white font-['JetBrains_Mono'] text-sm px-3 py-2 focus:outline-none focus:border-hud transition-colors placeholder:text-white/30"
-                  value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
-              </div>
-              <div>
-                <label className="block font-['JetBrains_Mono'] text-xs tracking-widest text-white/60 mb-1">PRIMARY GOALS *</label>
-                <textarea className="w-full bg-white/5 border border-white/20 text-white font-['JetBrains_Mono'] text-sm px-3 py-2 focus:outline-none focus:border-hud h-20 resize-none placeholder:text-white/30"
-                  value={form.goals} onChange={e => setForm({...form, goals: e.target.value})} required />
-              </div>
-              <div>
-                <label className="block font-['JetBrains_Mono'] text-xs tracking-widest text-white/60 mb-1">FITNESS LEVEL *</label>
-                <select className="w-full bg-white/5 border border-white/20 text-white font-['JetBrains_Mono'] text-sm px-3 py-2 focus:outline-none focus:border-hud"
-                  value={form.fitnessLevel} onChange={e => setForm({...form, fitnessLevel: e.target.value})}>
-                  <option value="Beginner">Beginner</option>
-                  <option value="Intermediate">Intermediate</option>
-                  <option value="Advanced">Advanced</option>
-                </select>
-              </div>
-              <div>
-                <label className="block font-['JetBrains_Mono'] text-xs tracking-widest text-white/60 mb-1">AVAILABILITY *</label>
-                <input type="text" className="w-full bg-white/5 border border-white/20 text-white font-['JetBrains_Mono'] text-sm px-3 py-2 focus:outline-none focus:border-hud placeholder:text-white/30"
-                  placeholder="e.g. 5 days/week, 60 min sessions"
-                  value={form.availability} onChange={e => setForm({...form, availability: e.target.value})} required />
-              </div>
-              <div>
-                <label className="block font-['JetBrains_Mono'] text-xs tracking-widest text-white/60 mb-1">FOCUS AREA (OPTIONAL)</label>
-                <input type="text" className="w-full bg-white/5 border border-white/20 text-white font-['JetBrains_Mono'] text-sm px-3 py-2 focus:outline-none focus:border-hud placeholder:text-white/30"
-                  value={form.focusArea} onChange={e => setForm({...form, focusArea: e.target.value})} />
-              </div>
-              <div>
-                <label className="block font-['JetBrains_Mono'] text-xs tracking-widest text-white/60 mb-1">INJURIES / LIMITATIONS (OPTIONAL)</label>
-                <input type="text" className="w-full bg-white/5 border border-white/20 text-white font-['JetBrains_Mono'] text-sm px-3 py-2 focus:outline-none focus:border-hud placeholder:text-white/30"
-                  value={form.limitations} onChange={e => setForm({...form, limitations: e.target.value})} />
-              </div>
-              <button onClick={() => generateMut.mutate({ ...form, fitnessLevel: form.fitnessLevel as "Beginner"|"Intermediate"|"Advanced", name: form.name || undefined, focusArea: form.focusArea || undefined, limitations: form.limitations || undefined })}
-                disabled={generateMut.isPending || !aiAvailable || !form.goals || !form.availability}
-                className="w-full py-3 bg-hud-deep text-white font-['JetBrains_Mono'] text-xs tracking-widest hover:bg-[#1f54e6] hover:shadow-[0_0_24px_rgb(56_198_255/0.45)] transition-colors disabled:opacity-50">
-                {generateMut.isPending ? "GENERATING..." : "GENERATE AI PLAN →"}
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Right: output */}
-      <div className="border border-white/10 p-6 min-h-64">
-        <div className="font-['JetBrains_Mono'] text-xs text-hud tracking-widest mb-3">OUTPUT // AI POWERED ENGINE</div>
-        {generateMut.isPending && (
-          <div className="font-['JetBrains_Mono'] text-sm text-white/50 animate-pulse">GENERATING OPERATOR BLUEPRINT...</div>
-        )}
-        {generateMut.error && (
-          <div className="font-['JetBrains_Mono'] text-sm text-destructive">ERROR: {generateMut.error.message}</div>
-        )}
-        {plan ? (
-          <div className="prose prose-invert prose-sm max-w-none font-['JetBrains_Mono'] text-sm text-white/80 [&_h1]:font-['Bebas_Neue'] [&_h2]:font-['Bebas_Neue'] [&_h3]:font-['Bebas_Neue'] [&_strong]:text-white">
-            <ReactMarkdown>{plan}</ReactMarkdown>
-          </div>
-        ) : !generateMut.isPending && (
-          <div className="font-['JetBrains_Mono'] text-sm text-white/30">
-            {'> Awaiting input. Drop your goals on the left and pull the trigger.'}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
 // ── Main Home page ───────────────────────────────────────────────────────────
 export default function Home() {
   const capabilities = trpc.site.capabilities.useQuery();
@@ -595,7 +374,8 @@ export default function Home() {
   const [activeSection, setActiveSection] = useState("hero");
   const [qualified, setQualified] = useState(false);
   const [pricing, setPricing] = useState<Record<string, string>>({});
-  const [activeDay, setActiveDay] = useState(0);
+  const chatAvailable = capabilities.data?.aiChat === true;
+  const [applyPrefill, setApplyPrefill] = useState<AskJayLead | null>(null);
   const [lightboxImg, setLightboxImg] = useState<string | null>(null);
   const [payForm, setPayForm] = useState({ name: "", email: "", method: "PayPal", amount: "", orderId: "", transactionId: "", note: "" });
   const [payDone, setPayDone] = useState(false);
@@ -603,13 +383,24 @@ export default function Home() {
 
   // Scroll spy
   useEffect(() => {
-    const sections = ["services","apply","investment","sample-split","ai-engine","coach-jay","proof","gallery","pay-invoice"];
+    const sections = ["services","investment","coach-jay","apply"];
     const observer = new IntersectionObserver(
       entries => { entries.forEach(e => { if (e.isIntersecting) setActiveSection(e.target.id); }); },
       { rootMargin: "-40% 0px -40% 0px" }
     );
     sections.forEach(id => { const el = document.getElementById(id); if (el) observer.observe(el); });
     return () => observer.disconnect();
+  }, []);
+
+  // The invoice panel is collapsed by default; open it when linked to directly.
+  useEffect(() => {
+    const openInvoice = () => {
+      const panel = document.getElementById("pay-invoice");
+      if (window.location.hash === "#pay-invoice" && panel instanceof HTMLDetailsElement) panel.open = true;
+    };
+    openInvoice();
+    window.addEventListener("hashchange", openInvoice);
+    return () => window.removeEventListener("hashchange", openInvoice);
   }, []);
 
   // Restore qualification from session storage
@@ -628,6 +419,12 @@ export default function Home() {
     document.addEventListener("keydown", closeOnEscape);
     return () => document.removeEventListener("keydown", closeOnEscape);
   }, [lightboxImg]);
+
+  // Ask Jay hands a ready visitor to the application with their details filled in.
+  function handleAskJayApply(lead: AskJayLead) {
+    setApplyPrefill({ ...lead });
+    document.getElementById("apply")?.scrollIntoView({ behavior: "smooth" });
+  }
 
   function handleQualified(p: Record<string, string>) {
     setQualified(true);
@@ -671,13 +468,13 @@ export default function Home() {
               JayLee Hustle Industries uses the MAO (Massive Action Orientation) Framework—a practical system combining physical conditioning, focused habits, and accountability for busy founders and career professionals.
             </p>
             <p className="font-['JetBrains_Mono'] text-sm text-white/70 max-w-2xl leading-relaxed mb-10">
-              Adaptation is the game. Build a private starting blueprint now, then apply for human coaching and individualized review.
+              Adaptation is the game. Ask Jay anything or build a starting plan in a two-minute chat, then apply for 1:1 coaching.
             </p>
             <div className="flex flex-wrap gap-4">
               <a href="#apply" className="px-8 py-4 bg-hud-deep text-white font-['JetBrains_Mono'] text-xs tracking-widest shadow-[0_0_18px_rgb(37_99_255/0.35)] hover:bg-[#1f54e6] hover:shadow-[0_0_28px_rgb(56_198_255/0.55)] transition-[background-color,box-shadow,transform] active:scale-[0.97]">
                 APPLY FOR A PACKAGE
               </a>
-              <a href="#ai-engine" className="px-8 py-4 border border-hud/50 text-hud font-['JetBrains_Mono'] text-xs tracking-widest hover:bg-hud/10 hover:border-hud transition-colors active:scale-[0.97]">
+              <a href="#ai-engine" onClick={event => { if (chatAvailable) { event.preventDefault(); openAskJay("Build me a starting plan"); } }} className="px-8 py-4 border border-hud/50 text-hud font-['JetBrains_Mono'] text-xs tracking-widest hover:bg-hud/10 hover:border-hud transition-colors active:scale-[0.97]">
                 BUILD MY STARTING PLAN
               </a>
             </div>
@@ -687,33 +484,13 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── TERMINOLOGY ──────────────────────────────────────────────────── */}
-      <Section id="terminology" index="00 /" title="TERMINOLOGY">
-        <p className="font-['JetBrains_Mono'] text-sm text-white/60 mb-8 max-w-2xl">Three terms you must understand before you read another line on this site. Everything else inherits from these.</p>
-        <div className="grid md:grid-cols-2 gap-4">
-          {[
-            { code: "G/00", term: "FOUNDER — MEET COACH JAY", def: "Founder of JayLee Hustle Industries. Author of the MAO Framework. Coach to the Operators on this platform — every protocol on this site comes from his system, not a textbook. Coach Jay built the MAO Framework in the field — not in a classroom. Every Operator on the roster is coached against the same standard he holds himself to. Adaptation is the game." },
-            { code: "G/01", term: "OPERATOR", def: "A high-output founder, executive, or career professional whose physical conditioning is the lever that compounds every other system in their life. We do not coach hobbyists. We coach Operators." },
-            { code: "G/02", term: "MAO (MASSIVE ACTION ORIENTATION)", def: "The proprietary JayLee framework: a triad of physical conditioning, neural optimization, and strict accountability. Every protocol is engineered to compound across all three planes simultaneously — not in isolation." },
-            { code: "G/03", term: "SWARM ECOSYSTEM", def: "The MAO operating model that connects programming, check-ins, communication, and evidence review around each Operator. Automation is introduced only where the supporting systems are configured and supervised." },
-          ].map(g => (
-            <div key={g.code} className="border border-white/10 p-6 hover:border-white/20 transition-colors">
-              <div className="font-['JetBrains_Mono'] text-xs text-hud tracking-widest mb-2">{g.code}</div>
-              <div className="font-['Bebas_Neue'] text-xl text-white mb-3">{g.term}</div>
-              <p className="font-['JetBrains_Mono'] text-xs text-white/60 leading-relaxed">{g.def}</p>
-            </div>
-          ))}
-        </div>
-      </Section>
-
       {/* ── SERVICES ─────────────────────────────────────────────────────── */}
-      <Section id="services" index="01 /" title="THE OFFER" className="border-t border-white/5">
+      <Section id="services" index="01 /" title="WHAT YOU GET" className="border-t border-white/5">
+        <p className="font-['JetBrains_Mono'] text-sm text-white/60 max-w-2xl mb-8">
+          Coaching for busy founders, athletes and professionals who are done starting over. One system for your training, your habits and your accountability.
+        </p>
         <div className="grid md:grid-cols-3 gap-6">
-          {[
-            { code: "S/01", title: "FITNESS PLANS", desc: "Programmed 12-week body recomposition blocks. Progressive overload, conditioning, mobility, nutrition guardrails — engineered around your life.", features: ["CUSTOM SPLIT + LIFT PROGRESSIONS","WEEKLY CHECK-INS & AUDITS","NUTRITION GUARDRAILS"] },
-            { code: "S/02", title: "PERSONAL TRAINING", desc: "1:1 sessions and remote coaching with the JayLee Hustle Industries standard — every rep logged, every session reviewed.", features: ["LIVE OR REMOTE SESSIONS","FORM AUDITS + VIDEO REVIEW","ACCOUNTABILITY LOOP"] },
-            { code: "S/03", title: "HUSTLE COACHING", desc: "Mindset, discipline, and operating systems for athletes, founders, and grinders. Train the body, sharpen the operator.", features: ["DAILY OPS + DISCIPLINE FRAMEWORK","QUARTERLY OBJECTIVE SETTING","MENTAL CONDITIONING"] },
-          ].map(s => (
+          {SERVICES.map(s => (
             <div key={s.code} className="border border-white/10 p-6 hover:border-hud/40 transition-colors group">
               <div className="font-['JetBrains_Mono'] text-xs text-hud tracking-widest mb-2">{s.code}</div>
               <div className="font-['Bebas_Neue'] text-2xl text-white mb-3 group-hover:text-hud transition-colors">{s.title}</div>
@@ -729,41 +506,18 @@ export default function Home() {
             </div>
           ))}
         </div>
-      </Section>
-
-      {/* ── APPLY ────────────────────────────────────────────────────────── */}
-      <Section id="apply" index="02B /" title="OPERATOR ADMISSION" className="border-t border-white/5">
-        <div className="grid lg:grid-cols-2 gap-12">
-          <div>
-            <p className="font-['JetBrains_Mono'] text-sm text-white/60 leading-relaxed mb-8">
-              Operator Admission is for committed founders and high-output professionals. The form below is intentionally rigorous — it is the velvet rope between curiosity and the MAO Swarm Ecosystem. Investment details are revealed after qualification.
-            </p>
-            <div className="border border-hud/30 p-5 mb-8 bg-hud-deep/5">
-              <div className="font-['JetBrains_Mono'] text-xs text-hud tracking-widest mb-2">VELVET ROPE // PROTOCOL</div>
-              <p className="font-['JetBrains_Mono'] text-xs text-white/60 leading-relaxed">No discount codes. No "buy now" buttons. Pricing is revealed by application only. Coach Jay reviews completed applications and sends next steps to qualified operators.</p>
+        <dl className="mt-8 grid md:grid-cols-2 gap-4">
+          {TERMS.filter(t => t.code === "G/01" || t.code === "G/02").map(t => (
+            <div key={t.code} className="border-l-2 border-hud/50 pl-4">
+              <dt className="font-['JetBrains_Mono'] text-[10px] text-hud tracking-widest mb-1">{t.term}</dt>
+              <dd className="font-['JetBrains_Mono'] text-xs text-white/55 leading-relaxed">{t.def}</dd>
             </div>
-            <div className="font-['JetBrains_Mono'] text-xs text-white/30 space-y-1">
-              <div>4-PHASE STRICT QUALIFICATION</div>
-              <div>PHASE 1 — IDENTITY</div>
-              <div>PHASE 2 — MISSION PROFILE</div>
-              <div>PHASE 3 — LOGISTICS & COMMITMENT</div>
-              <div>PHASE 4 — READINESS</div>
-            </div>
-          </div>
-          <AgentModule
-            code="MOD-02"
-            name="ADMISSION"
-            status={capabilities.data ? (capabilities.data.applicationIntake ? "online" : "offline") : "standby"}
-          >
-            <div className="p-5 md:p-6">
-              <ApplyForm onQualified={handleQualified} />
-            </div>
-          </AgentModule>
-        </div>
+          ))}
+        </dl>
       </Section>
 
       {/* ── INVESTMENT ───────────────────────────────────────────────────── */}
-      <Section id="investment" index="02 /" title="INVESTMENT PACKAGES" className="border-t border-white/5">
+      <Section id="investment" index="02 /" title="PACKAGES" className="border-t border-white/5">
         <p className="font-['JetBrains_Mono'] text-sm text-white/60 max-w-2xl mb-8">
           You are not buying a product. You are investing in a transformation engineered on the MAO methodology — Hustle First, Recomp over Vanity, Consistency over Intensity, Accountability Loop.
         </p>
@@ -773,26 +527,7 @@ export default function Home() {
           </div>
         )}
         <div className="grid md:grid-cols-3 gap-6">
-          {[
-            {
-              code: "INV/01", title: "FOUNDATION", badge: null, priceKey: "FOUNDATION_PRICE",
-              desc: "Entry tier for committed operators. Weekly programming restructures + monthly Zoom call with Coach Jay. Custom 12-week recomposition block with ongoing adjustments.",
-              features: ["Custom 12-week recomposition block","Weekly programming restructures","Monthly Zoom call with Coach Jay","Nutrition guardrails + macro plan","Scheduled messaging Mon–Fri","Program review after week 4 + 8"],
-              cta: "APPLY FOR FOUNDATION"
-            },
-            {
-              code: "INV/02", title: "RECOMP", badge: "FLAGSHIP", priceKey: "RECOMP_PRICE",
-              desc: "The flagship transformation. Weekly programming restructures + weekly Zoom calls with Coach Jay. Full body recomposition, form audits, direct line to Coach Jay. Built for the prospect who is done starting over.",
-              features: ["Everything in FOUNDATION","Weekly programming restructures","Weekly Zoom call with Coach Jay","Weekly 1:1 form audit","Custom recovery + sleep protocol","Direct messaging with an agreed response window","Full body recomposition focus"],
-              cta: "APPLY FOR RECOMP"
-            },
-            {
-              code: "INV/03", title: "LEGACY", badge: null, priceKey: "LEGACY_PRICE",
-              desc: "Premium tier for high-performing operators. Twice-weekly programming restructures + Zoom calls. Full body recomposition, intensive coaching, direct line to Coach Jay. By application only.",
-              features: ["Everything in RECOMP","Twice-weekly programming restructures","Twice-weekly Zoom calls with Coach Jay","Intensive form audits + video review","Priority messaging during agreed support hours","Custom recovery + sleep protocol","Direct text access with boundaries confirmed before start"],
-              cta: "APPLY FOR LEGACY"
-            },
-          ].map(tier => (
+          {TIERS.map(tier => (
             <AgentModule key={tier.code} code={tier.code} name={tier.title}
               status={qualified ? "online" : "standby"} label={qualified ? "UNLOCKED" : "LOCKED"}
               className={`${tier.badge ? 'border-hud/70! shadow-[0_0_32px_rgb(56_198_255/0.12)]' : ''} hover:border-hud/60 transition-colors`}>
@@ -823,93 +558,8 @@ export default function Home() {
         <p className="font-['JetBrains_Mono'] text-[10px] text-white/30 mt-6">* IN-PERSON INTENSIVES SUBJECT TO COACH AVAILABILITY AND SCHEDULING. ALL PACKAGES BY APPLICATION VIA THE MAO INTAKE.</p>
       </Section>
 
-      {/* ── SAMPLE SPLIT ─────────────────────────────────────────────────── */}
-      <Section id="sample-split" index="04 /" title="COACH JAY'S REAL TRAINING WEEK" className="border-t border-white/5">
-        <p className="font-['JetBrains_Mono'] text-sm text-white/60 max-w-2xl mb-2">
-          This is Jordan's actual weekly split. Your custom MAO program will be built to the same standard — personalized to your goals, schedule, and equipment. Home-based or gym — the system adapts.
-        </p>
-        <p className="font-['JetBrains_Mono'] text-xs text-white/30 mb-8 tracking-widest">TAP A DAY TO SEE THE PRESCRIPTION. COACH'S NOTES INCLUDED ON EVERY LIFT.</p>
-        {/* Day tabs */}
-        <div className="flex flex-wrap gap-2 mb-6">
-          {TRAINING_SPLIT.map((d, i) => (
-            <button key={d.day} onClick={() => setActiveDay(i)}
-              className={`px-4 py-2 font-['JetBrains_Mono'] text-xs tracking-widest transition-colors ${activeDay === i ? 'bg-hud-deep text-white' : 'border border-white/20 text-white/60 hover:border-white/40'}`}>
-              {d.day}
-            </button>
-          ))}
-        </div>
-        {/* Day content */}
-        <div className="border border-white/10 p-6">
-          <div className="font-['JetBrains_Mono'] text-xs text-hud tracking-widest mb-1">DAY {activeDay + 1} · {TRAINING_SPLIT[activeDay].day}</div>
-          <div className="font-['Bebas_Neue'] text-2xl text-white mb-1">{TRAINING_SPLIT[activeDay].label}</div>
-          <div className="font-['JetBrains_Mono'] text-xs text-white/40 mb-6">{TRAINING_SPLIT[activeDay].muscles} — {TRAINING_SPLIT[activeDay].count} LIFTS</div>
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[600px]">
-              <thead>
-                <tr className="border-b border-white/10">
-                  {["EXERCISE","SETS","REPS","REST","COACH'S NOTE"].map(h => (
-                    <th key={h} className="text-left font-['JetBrains_Mono'] text-[10px] text-white/40 tracking-widest pb-3 pr-4">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {TRAINING_SPLIT[activeDay].lifts.map((lift, i) => (
-                  <tr key={i} className="border-b border-white/5 hover:bg-white/2">
-                    <td className="font-['JetBrains_Mono'] text-xs text-white py-3 pr-4">{lift.exercise}</td>
-                    <td className="font-['JetBrains_Mono'] text-xs text-white/70 py-3 pr-4">{lift.sets}</td>
-                    <td className="font-['JetBrains_Mono'] text-xs text-white/70 py-3 pr-4">{lift.reps}</td>
-                    <td className="font-['JetBrains_Mono'] text-xs text-white/70 py-3 pr-4">{lift.rest}</td>
-                    <td className="font-['JetBrains_Mono'] text-xs text-white/40 py-3 italic">{lift.note}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-        <p className="font-['JetBrains_Mono'] text-[10px] text-white/20 mt-4">* SAMPLE SPLIT — YOUR CUSTOM MAO PROGRAM IS BUILT AFTER QUALIFICATION.</p>
-      </Section>
-
-      {/* ── AI ENGINE ────────────────────────────────────────────────────── */}
-      <Section id="ai-engine" index="05 /" title="PROGRAM ARCHITECT" className="border-t border-white/5">
-        <AgentModule code="MOD-05" name="PROGRAM ARCHITECT" status="online" label="LOCAL · ONLINE">
-          <div className="p-4 md:p-6">
-            <ProgramArchitect />
-          </div>
-        </AgentModule>
-      </Section>
-
-      {/* ── COMMAND CENTER ───────────────────────────────────────────────── */}
-      <Section id="command-center" index="06 /" title="MAO COMMAND CENTER" className="border-t border-white/5">
-        <p className="font-['JetBrains_Mono'] text-sm text-white/60 max-w-2xl mb-2">
-          Every admitted Operator gets a private dashboard for biomarkers, audits, and direct communication. No vague 'wellness' copy. This is the accountability infrastructure behind the MAO coaching process.
-        </p>
-        <p className="font-['JetBrains_Mono'] text-xs text-white/30 tracking-widest mb-8">BELOW: AN ILLUSTRATIVE COMMAND CENTER PREVIEW. SAMPLE NUMBERS SHOWN FOR DEMONSTRATION.</p>
-        <AgentModule code="MOD-06" name="COMMAND CENTER" status="standby" label="PREVIEW · SAMPLE DATA" className="mb-10">
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 md:p-5">
-          {[
-            { code: "D/01", stat: "96%", label: "DAILY COMPLIANCE", sub: "ILLUSTRATIVE WEEK", desc: "A sample view of how training, nutrition, and recovery adherence can be reviewed during coaching." },
-            { code: "D/02", stat: "BF 13.4%", label: "BIOMARKER TRACKING", sub: "ILLUSTRATIVE TREND", desc: "A sample view of how body-composition and recovery metrics can be organized over time. Results vary by individual." },
-            { code: "D/03", stat: "DIRECT", label: "COMM CHANNELS", sub: "CHANNELS SET DURING ONBOARDING", desc: "Coaching communication is handled directly. Channel availability and response expectations are confirmed before a client starts." },
-            { code: "D/04", stat: "WEEKLY", label: "COACHING AUDIT", sub: "PLAN REVIEW + ADJUSTMENT", desc: "The weekly review identifies bottlenecks and informs the next programming adjustment. No copy-paste programs." },
-          ].map(d => (
-            <div key={d.code} className="border border-white/10 bg-[#05070b]/60 p-5">
-              <div className="font-['JetBrains_Mono'] text-xs text-hud tracking-widest mb-2">{d.code}</div>
-              <div className="font-['Bebas_Neue'] text-3xl text-white mb-1">{d.stat}</div>
-              <div className="font-['JetBrains_Mono'] text-[10px] text-white/60 tracking-widest mb-1">{d.label}</div>
-              <div className="font-['JetBrains_Mono'] text-[10px] text-hud/70 tracking-widest mb-3">{d.sub}</div>
-              <p className="font-['JetBrains_Mono'] text-[10px] text-white/40 leading-relaxed">{d.desc}</p>
-            </div>
-          ))}
-        </div>
-        </AgentModule>
-        <div className="border border-white/10 p-6">
-          <div className="font-['JetBrains_Mono'] text-xs text-white/30 tracking-widest mb-3">ACCOUNTABILITY LOOP ·· MATERIALIZED</div>
-          <p className="font-['JetBrains_Mono'] text-sm text-white/60 leading-relaxed">The Command Center supports the Accountability Loop: the Operator logs the work, the coaching system organizes the review, and the next plan is adjusted from the available evidence. The preview above uses illustrative data and does not represent a client result.</p>
-        </div>
-      </Section>
-
       {/* ── COACH JAY ────────────────────────────────────────────────────── */}
-      <Section id="coach-jay" index="06 /" title="THE OPERATOR" className="border-t border-white/5">
+      <Section id="coach-jay" index="03 /" title="COACH JAY" className="border-t border-white/5">
         <div className="grid lg:grid-cols-2 gap-12 items-start">
           <div>
             <img src={ASSETS.coachPortrait} alt="Coach Jay — Jordan Lee" className="w-full max-w-sm object-cover" />
@@ -921,19 +571,11 @@ export default function Home() {
             <div className="font-['Bebas_Neue'] text-2xl text-white mb-6 border-l-2 border-hud pl-4">
               JAYLEE FIT IS NOT A GYM. IT IS AN OPERATING SYSTEM FOR YOUR BODY.
             </div>
-            <p className="font-['JetBrains_Mono'] text-sm text-white/70 leading-relaxed mb-4">
-              Jordan Lee — "Coach Jay" — is the founder of JayLee Fit (JayLee Hustle Industries LLC), based in Hot Springs, Arkansas. He built his coaching approach on one belief: sustainable progress comes from realistic systems, not extreme programs that fall apart in week two. MAO is his operating framework for consistent training and accountability.
-            </p>
-            <p className="font-['JetBrains_Mono'] text-sm text-white/70 leading-relaxed mb-8">
-              Jordan coaches founders, athletes, and busy dads specifically because he understands the life — the early mornings, the packed schedules, the guilt of putting yourself last. His approach strips away the noise and builds programs that actually fit your week, your equipment, and your energy. Home-based training. No gym required. Real accountability.
-            </p>
+            {COACH.bio.map((para, i) => (
+              <p key={i} className={`font-['JetBrains_Mono'] text-sm text-white/70 leading-relaxed ${i === COACH.bio.length - 1 ? "mb-8" : "mb-4"}`}>{para}</p>
+            ))}
             <div className="grid grid-cols-2 gap-6 mb-8">
-              {[
-                { label: "SPECIALIZATIONS", items: ["Athletic performance","Fat loss","Functional strength","Metabolic efficiency","GLP-1 adaptation","Wearable data integration","12-week specialization programs"] },
-                { label: "COACHING APPROACH", items: ["Progressive programming","Nutrition guardrails","Human review","Habit accountability","Plans built around real schedules"] },
-                { label: "MISSION", items: ["Build disciplined, capable bodies and operators through programmed recomposition and a relentless accountability loop."] },
-                { label: "METHOD", items: ["Hustle First","Recomp over Vanity","Consistency over Intensity","Accountability Loop","Repeat for 12 weeks"] },
-              ].map(b => (
+              {COACH.blocks.map(b => (
                 <div key={b.label}>
                   <div className="font-['JetBrains_Mono'] text-[10px] text-hud tracking-widest mb-2">{b.label}</div>
                   <ul className="space-y-1">
@@ -959,21 +601,7 @@ export default function Home() {
             </div>
           </div>
         </div>
-      </Section>
-
-      {/* ── PROOF ────────────────────────────────────────────────────────── */}
-      <Section id="proof" index="07 /" title="THE RECEIPTS" className="border-t border-white/5">
-        <div className="border border-white/10 p-8 text-center">
-          <div className="font-['JetBrains_Mono'] text-xs text-white/30 tracking-widest mb-4">CLIENT RESULTS</div>
-          <div className="font-['Bebas_Neue'] text-3xl text-white mb-4">VERIFIED TESTIMONIALS PUBLISHING SOON.</div>
-          <p className="font-['JetBrains_Mono'] text-sm text-white/50">Ask Coach Jay for references during your qualification review.</p>
-        </div>
-      </Section>
-
-      {/* ── GALLERY ──────────────────────────────────────────────────────── */}
-      <Section id="gallery" index="09 /" title="THE STANDARD" className="border-t border-white/5">
-        <p className="font-['JetBrains_Mono'] text-sm text-white/60 mb-8">Every Operator holds the same standard. Discipline. Focus. Consistency. Success.</p>
-        <div className="grid md:grid-cols-3 gap-4">
+        <div className="mt-12 grid grid-cols-3 gap-2 md:gap-4">
           {[
             { src: ASSETS.galleryOperatorFocus, caption: "OPERATOR FOCUS" },
             { src: ASSETS.galleryAbsoluteFocus, caption: "ABSOLUTE FOCUS" },
@@ -993,10 +621,62 @@ export default function Home() {
             <button type="button" autoFocus onClick={() => setLightboxImg(null)} className="absolute top-4 right-4 min-h-11 px-4 text-white bg-black/70 font-['JetBrains_Mono'] text-xs tracking-widest hover:text-hud">CLOSE ✕</button>
           </div>
         )}
+        <p className="mt-8 border border-white/10 p-4 font-['JetBrains_Mono'] text-xs text-white/50">
+          <span className="text-hud tracking-widest">CLIENT RESULTS //</span> Verified testimonials are publishing soon. Ask Coach Jay for references during your application review.
+        </p>
       </Section>
 
-      {/* ── PAY INVOICE ──────────────────────────────────────────────────── */}
-      <Section id="pay-invoice" index="08 /" title="PAY INVOICE" className="border-t border-white/5">
+      {/* ── APPLY ────────────────────────────────────────────────────────── */}
+      <Section id="apply" index="04 /" title="APPLY" className="border-t border-white/5">
+        <div className="grid lg:grid-cols-2 gap-12">
+          <div>
+            <p className="font-['JetBrains_Mono'] text-sm text-white/60 leading-relaxed mb-8">
+              Four short steps. Coach Jay reads every application himself and replies with next steps. Package pricing is shown once you finish. Not sure yet? Ask Jay any question first.
+            </p>
+            <div className="border border-hud/30 p-5 mb-8 bg-hud-deep/5">
+              <div className="font-['JetBrains_Mono'] text-xs text-hud tracking-widest mb-2">VELVET ROPE // PROTOCOL</div>
+              <p className="font-['JetBrains_Mono'] text-xs text-white/60 leading-relaxed">No discount codes. No "buy now" buttons. Pricing is revealed by application only. Coach Jay reviews completed applications and sends next steps to qualified operators.</p>
+            </div>
+            <div className="font-['JetBrains_Mono'] text-xs text-white/30 space-y-1">
+              <div>4-PHASE STRICT QUALIFICATION</div>
+              <div>PHASE 1 — IDENTITY</div>
+              <div>PHASE 2 — MISSION PROFILE</div>
+              <div>PHASE 3 — LOGISTICS & COMMITMENT</div>
+              <div>PHASE 4 — READINESS</div>
+            </div>
+          </div>
+          <AgentModule
+            code="MOD-02"
+            name="ADMISSION"
+            status={capabilities.data ? (capabilities.data.applicationIntake ? "online" : "offline") : "standby"}
+          >
+            <div className="p-5 md:p-6">
+              <ApplyForm onQualified={handleQualified} prefill={applyPrefill} />
+            </div>
+          </AgentModule>
+        </div>
+      </Section>
+
+      {/* ── AI ENGINE ────────────────────────────────────────────────────── */}
+      {capabilities.data && !chatAvailable && (
+      <Section id="ai-engine" index="05 /" title="BUILD A STARTING PLAN" className="border-t border-white/5">
+        <AgentModule code="MOD-05" name="PROGRAM ARCHITECT" status="online" label="LOCAL · ONLINE">
+          <div className="p-4 md:p-6">
+            <ProgramArchitect />
+          </div>
+        </AgentModule>
+      </Section>
+      )}
+
+      </main>
+
+      {/* ── PAY INVOICE (existing clients) ──────────────────────────────── */}
+      <section className="relative z-10 border-t border-white/5">
+        <details id="pay-invoice" className="max-w-6xl mx-auto px-4 py-8 group scroll-mt-14">
+          <summary className="cursor-pointer list-none font-['JetBrains_Mono'] text-xs text-white/60 tracking-widest hover:text-white">
+            <span className="text-hud">+</span> EXISTING CLIENT? PAY AN INVOICE
+          </summary>
+          <div className="pt-6">
         <p className="font-['JetBrains_Mono'] text-sm text-white/60 max-w-2xl mb-4">
           For already-onboarded clients only. Once Coach Jay has approved your application and issued an Order ID, settle your invoice via PayPal below.
         </p>
@@ -1070,9 +750,11 @@ export default function Home() {
             )}
           </div>
         </div>
-      </Section>
+          </div>
+        </details>
+      </section>
 
-      </main>
+      <AskJay available={chatAvailable} checking={capabilities.isPending} onApply={handleAskJayApply} />
 
       {/* ── FOOTER ───────────────────────────────────────────────────────── */}
       <footer className="border-t border-white/10 py-12">
@@ -1092,9 +774,9 @@ export default function Home() {
             <div>
               <div className="font-['JetBrains_Mono'] text-xs text-hud tracking-widest mb-3">SITEMAP</div>
               <div className="grid grid-cols-2 gap-1">
-                {["#services","#apply","#investment","#sample-split","#ai-engine","#coach-jay","#proof","#gallery","#pay-invoice"].map(href => (
+                {[["#services","WHAT YOU GET"],["#investment","PACKAGES"],["#coach-jay","COACH JAY"],["#apply","APPLY"],["#pay-invoice","PAY AN INVOICE"]].map(([href, label]) => (
                   <a key={href} href={href} className="font-['JetBrains_Mono'] text-[10px] text-white/30 hover:text-white/60 tracking-widest transition-colors">
-                    {href.slice(1).toUpperCase().replace(/-/g, " ")}
+                    {label}
                   </a>
                 ))}
               </div>
