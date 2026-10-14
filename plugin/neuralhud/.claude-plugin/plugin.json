@@ -1,0 +1,11 @@
+{
+  "name": "neuralhud",
+  "version": "0.1.0",
+  "description": "Operate the NeuralHUD media pipeline (script -> ElevenLabs TTS -> Remotion render -> delivery): status, stuck-job triage, asset lookup, credit audits, and guarded job control.",
+  "author": {
+    "name": "Jay Lee Hustle Industries"
+  },
+  "repository": "https://github.com/jayleehustleindustries-lab/fantastic-octo-computing-machine",
+  "license": "Apache-2.0",
+  "keywords": ["mcp", "media-pipeline", "elevenlabs", "remotion", "supabase"]
+}

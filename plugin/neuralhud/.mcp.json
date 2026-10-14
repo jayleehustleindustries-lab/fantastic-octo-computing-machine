@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "neuralhud": {
+      "type": "http",
+      "url": "${NEURALHUD_MCP_URL}",
+      "headers": {
+        "Authorization": "Bearer ${NEURALHUD_MCP_TOKEN}"
+      }
+    }
+  }
+}
