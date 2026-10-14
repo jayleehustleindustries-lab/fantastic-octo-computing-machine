@@ -181,3 +181,27 @@ begin
 
   return j;
 end $$;
+
+-- Supabase exposes the public schema over its REST API to anyone holding the
+-- (public) anon key. RLS with no policies closes that door; the MCP server
+-- and workers connect as the postgres role, which bypasses RLS.
+alter table jobs                enable row level security;
+alter table job_events          enable row level security;
+alter table assets              enable row level security;
+alter table generation_calls    enable row level security;
+alter table mcp_requests        enable row level security;
+alter table allowed_transitions enable row level security;
+
+-- Belt and braces: Supabase also exposes functions over RPC. Only the
+-- server-side roles should be able to call transition_job().
+revoke execute on function transition_job(uuid, job_status, job_status, text, text) from public;
+do $$
+declare r text;
+begin
+  foreach r in array array['anon', 'authenticated'] loop
+    if exists (select 1 from pg_roles where rolname = r) then
+      execute format('revoke all on all tables in schema public from %I', r);
+      execute format('revoke execute on function transition_job(uuid, job_status, job_status, text, text) from %I', r);
+    end if;
+  end loop;
+end $$;

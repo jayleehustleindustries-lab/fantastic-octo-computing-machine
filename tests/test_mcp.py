@@ -247,3 +247,9 @@ def test_credit_audit(tool, sql):
 def test_find_assets_needs_filter(tool):
     data, err = tool("find_assets")
     assert err
+
+
+def test_rls_enabled_on_every_table(sql):
+    rows = sql("""select relname from pg_class c join pg_namespace n on n.oid = c.relnamespace
+                  where n.nspname = 'public' and c.relkind = 'r' and not c.relrowsecurity""")
+    assert rows == []
