@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "jayleefit": {
+      "type": "http",
+      "url": "https://www.jayleefit.com/mcp"
+    }
+  }
+}

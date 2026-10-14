@@ -6,6 +6,7 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { handleStripeWebhook, stripeConfigured } from "../remap";
 import { registerStorageProxy } from "./storageProxy";
+import { registerMcp } from "../mcp";
 import { appRouter, siteCapabilities } from "../routers";
 import { ENV } from "./env";
 import { createContext } from "./context";
@@ -59,6 +60,9 @@ async function startServer() {
   app.get("/api/health", (_req, res) => {
     res.json({ ok: true, ...siteCapabilities() });
   });
+
+  // The site as an MCP server for Claude's custom connectors (off until configured).
+  registerMcp(app);
 
   // Manus runtime pieces, only when this runs inside Manus.
   if (ENV.forgeApiUrl && ENV.forgeApiKey) registerStorageProxy(app);

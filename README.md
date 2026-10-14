@@ -36,7 +36,17 @@ Checkout is a Stripe Checkout Session. When Stripe confirms payment (webhook, or
 
 Each order is a row in the Airtable "Remap Orders" table. A delivered Remap also creates or updates the buyer's Clients record, adds a Nutrition Plan with the gram targets, and moves the lead to "Remap purchased". Expect roughly $0.30–0.60 of Claude usage per program.
 
-`GET /api/health` returns `{ ok, applicationIntake, paymentReporting, aiChat, remapCheckout }` and is the Railway healthcheck.
+`GET /api/health` returns `{ ok, applicationIntake, paymentReporting, aiChat, remapCheckout, mcp }` and is the Railway healthcheck.
+
+## Connect Claude (MCP)
+
+The site is also an MCP server at `/mcp`, so Claude can read leads, Remap orders, clients and payment reports, update a lead's stage, mark a payment verified, and rebuild a failed Remap. It also has the public offers and the BMR/macro calculator. Nothing can be deleted through it.
+
+1. In Railway → Variables, set `MCP_OWNER_PASSWORD` (your sign-in password) and `MCP_SIGNING_SECRET` (any random 32+ characters). Set `PUBLIC_SITE_URL` to the address you'll connect with.
+2. **claude.ai:** Settings → Connectors → Add custom connector. Name it "JayLee Fit", with the URL `https://<site>/mcp`. Press Connect and enter the password.
+3. **Claude Code:** `.mcp.json` in this repo registers `https://www.jayleefit.com/mcp`. Run `/mcp` and sign in. For staging, use `claude mcp add --transport http jayleefit-staging https://jayleefit-staging-production.up.railway.app/mcp`.
+
+Sign-in is OAuth with your password: 5 tries per hour, and only Claude's callback (or localhost) can receive a code. Tokens are signed, not stored, so redeploys don't sign you out. Changing `MCP_SIGNING_SECRET` signs everyone out.
 
 ## Deployment
 

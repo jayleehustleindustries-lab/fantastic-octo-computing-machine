@@ -9,6 +9,7 @@ import { askJay, chatInput } from "./chat";
 import { remapAvailable, remapIntake, remapPriceCents, remapStatus, startCheckout } from "./remap";
 import { sourceLabel } from "@shared/source";
 import { claudeConfigured, takeSlot } from "./claude";
+import { mcpConfigured } from "./mcp/auth";
 import {
   upsertApplication,
   getApplicationByEmail,
@@ -40,6 +41,7 @@ export function siteCapabilities() {
     paymentReporting: airtableConfigured(),
     aiChat: claudeConfigured(),
     remapCheckout: remapAvailable(),
+    mcp: mcpConfigured(),
   };
 }
 

@@ -325,3 +325,52 @@ export async function recordRemapDelivery(r: DeliveredRemap): Promise<void> {
     });
   }
 }
+
+// ── Generic reads and writes (the MCP connector's tools) ────────────────────
+
+const TABLES = {
+  leads: leadsTable,
+  payments: paymentsTable,
+  remap: remapTable,
+  clients: clientsTable,
+  nutrition: nutritionTable,
+} as const;
+
+export type TableKey = keyof typeof TABLES;
+
+export type ListOptions = {
+  formula?: string;
+  sortField?: string;
+  sortDirection?: "asc" | "desc";
+  pageSize?: number;
+  /** Airtable's paging cursor from a previous page. */
+  offset?: string;
+  fields?: string[];
+};
+
+/** One page of records. `offset` is set when more records follow. */
+export async function listRecords(table: TableKey, options: ListOptions = {}): Promise<{ records: AirtableRecord[]; offset?: string }> {
+  const params = new URLSearchParams({ pageSize: String(Math.min(Math.max(options.pageSize ?? 20, 1), 100)) });
+  if (options.formula) params.set("filterByFormula", options.formula);
+  if (options.sortField) {
+    params.set("sort[0][field]", options.sortField);
+    params.set("sort[0][direction]", options.sortDirection ?? "desc");
+  }
+  if (options.offset) params.set("offset", options.offset);
+  for (const field of options.fields ?? []) params.append("fields[]", field);
+  const data = await airtable(`?${params}`, {}, TABLES[table]());
+  return { records: data.records ?? [], offset: data.offset };
+}
+
+export async function getRecord(table: TableKey, id: string): Promise<AirtableRecord | null> {
+  try {
+    return await airtable(`/${encodeURIComponent(id)}`, {}, TABLES[table]());
+  } catch (error) {
+    if (error instanceof Error && /^Airtable (404|403):/.test(error.message)) return null;
+    throw error;
+  }
+}
+
+export const updateRecord = (table: TableKey, id: string, fields: Record<string, unknown>) => update(TABLES[table](), id, fields);
+
+export { formulaString };

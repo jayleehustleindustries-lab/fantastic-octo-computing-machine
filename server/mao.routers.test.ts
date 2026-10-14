@@ -65,6 +65,7 @@ describe("site.capabilities", () => {
       paymentReporting: Boolean(process.env.AIRTABLE_API_TOKEN && process.env.AIRTABLE_BASE_ID),
       aiChat: Boolean(process.env.ANTHROPIC_API_KEY),
       remapCheckout: false,
+      mcp: false,
     });
     expect(Object.values(result).every(v => typeof v === "boolean")).toBe(true);
   });
