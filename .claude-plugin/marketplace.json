@@ -1,0 +1,14 @@
+{
+  "name": "neuralhud",
+  "description": "Claude plugin and MCP connector for the NeuralHUD media automation state engine.",
+  "owner": {
+    "name": "Jay Lee Hustle Industries"
+  },
+  "plugins": [
+    {
+      "name": "neuralhud",
+      "source": "./plugin/neuralhud",
+      "description": "Operate the NeuralHUD media pipeline: status, stuck-job triage, asset lookup, credit audits, and guarded job control."
+    }
+  ]
+}
