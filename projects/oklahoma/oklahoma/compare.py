@@ -18,11 +18,16 @@ Method (productized from the ad hoc tonight.py / thresholds.py):
     for whole-number lines.
   * Calibrated P(more)/P(less): the over/under split among non-push outcomes goes through
     calibrate.calibrate (single markets listed in the calibration file's own _meta.apply_to, else
-    calibrate.APPLY_TO) or, for combos, 0.5 + 0.85*(p-0.5) (flag COMBO_UNCALIBRATED: no fitted map
+    calibrate.APPLY_TO; none if the file's _meta.model is not the model in use) or, for combos, 0.5 + 0.85*(p-0.5) (flag COMBO_UNCALIBRATED: no fitted map
     exists). Push mass is carried unchanged.
   * break-even = payout ** (-1 / legs) (3x for 2 legs: 0.5774; 6x for 3 legs: 0.5503). edge =
     P(win) of the evaluated side minus break-even. A push is counted as not winning, which is
     conservative; the book's push rule decides the true value.
+  * Benter blend (decide on THIS, not on `edge`): a pick'em line is the market's 50/50 price on the
+    non-push outcomes, so p_blend = BENTER_W * p_side + (1 - BENTER_W) * (1 - p_push) * 0.5 and
+    edge_blend = p_blend - break-even. The table is sorted by edge_blend. The raw `edge` (model alone vs
+    break-even) overstates: the Oct 9 Hillmon leg showed raw 0.69 (+11%) but blends to 0.557, below the
+    0.577 two-pick break-even. BENTER_W = 0.3 is assumed, not fitted (no history of Dabble lines yet).
   * Playoff role bias (on by default in playoff games for context_glm_plus2 ONLY; --no-role-bias turns it
     off): see ROLE_BIAS. It is switched off automatically for a model whose design already has starter_prev
     terms (context_glm_plus2si, the default, and plus2s): those fit the starter/bench playoff effect
@@ -36,7 +41,9 @@ Flags (space separated in the `flags` column):
   BIG_DISAGREEMENT    |line - model mean| > 1 sd: the book probably knows something the model does not
   SAME_PLAYER         more than one input row for this player (the legs are correlated; do not stack them)
   COMBO_UNCALIBRATED  P+R / P+A / R+A: no fitted calibration, 0.85 shrink toward 50% instead
-  UNCALIBRATED        single market the calibration file does not list in apply_to (today: all but points), probabilities are the raw model's
+  UNCALIBRATED        single market the calibration file does not list in apply_to (today: all but points), or every
+                      single market when the file's _meta.model is not --model (the map was fit on another model's
+                      probabilities; a CalibrationModelMismatch warning is printed). Probabilities are the raw model's
   MINUTES_DIFF        |median of a quantile-GBM minutes model (oklahoma.minutes, fit on the same training
                       window) - her recent minutes (min_ewm)| >= 3: the projection assumes her usual workload and
                       the minutes model disagrees. A flag only, never a model input.
@@ -65,6 +72,7 @@ from oklahoma.models import MU_FLOOR
 N_SIMS = 40_000
 SEED = 7
 COMBO_SHRINK = 0.85          # fitted single-market calibration slopes are 0.82-0.89
+BENTER_W = 0.3              # model weight in the pick'em blend (assumed; the line itself is the other 0.7)
 MIN_HISTORY = 5              # prior career games below this: outside the training distribution
 MINUTES_DIFF_MIN = 3.0       # |minutes-model median - min_ewm| at or above this raises MINUTES_DIFF
 LOG_PATH = ingest.ROOT / "data" / "line_log.csv"
@@ -102,7 +110,7 @@ LOG_COLS = ["timestamp_utc", "date", "team", "player", "athlete_id", "game_id", 
             "model", "data_cutoff", "p_more_cal", "p_push", "flags"]
 RESULT_COLS = ["player", "team", "opp", "athlete_id", "game_id", "market", "line", "side", "rec_side", "role",
                "mean", "mean_raw", "role_shift", "sd", "p_over", "p_push", "p_under", "p_more_cal", "p_less_cal",
-               "p_side", "break_even", "edge", "recent_min", "min_p50", "career_games", "flags"]
+               "p_side", "break_even", "edge", "p_blend", "edge_blend", "recent_min", "min_p50", "career_games", "flags"]
 
 
 # ---------- input ----------
@@ -152,6 +160,12 @@ def read_lines(path) -> pd.DataFrame:
 
 
 # ---------- simulation ----------
+
+
+def blend(p_side: float, p_push: float = 0.0, w: float = None) -> float:
+    """Benter blend of the model's P(side wins) with a pick'em line's implicit 50/50 on non-push outcomes."""
+    w = BENTER_W if w is None else w
+    return w * p_side + (1 - w) * (1 - p_push) * 0.5
 
 def break_even(payout: float, legs: int) -> float:
     """Win probability per leg at which a pick'em slip paying `payout`x for `legs` legs breaks even."""
@@ -229,14 +243,16 @@ def started_previous(target: pd.DataFrame) -> pd.Series:
 def evaluate(lines: pd.DataFrame, target: pd.DataFrame, fits: dict[str, tuple[np.ndarray, np.ndarray]], *,
              playoffs: bool, role_bias: bool = True, payout: float = 3.0, legs: int = 2, stale: bool = False,
              n_sims: int = N_SIMS, seed: int = SEED, cal_params: dict | None = None, cal_apply_to=None,
-             min_p50: np.ndarray | None = None) -> pd.DataFrame:
+             min_p50: np.ndarray | None = None, model: str | None = None) -> pd.DataFrame:
     """One result row per input line. `fits` = {stat: (mu, alpha)} arrays aligned to `target` rows.
 
     `role_bias` is taken as given (compare() has already checked role_bias_status). `cal_params` replaces the
     production calibration file (with `cal_apply_to` as its market list, default calibrate.APPLY_TO).
+    `model` = the model that produced `fits`: the production file is only used if it was fit for that model
+    (otherwise every single market is UNCALIBRATED; calibrate.effective_apply_to warns). None skips the check.
     `min_p50` = minutes-model medians aligned to `target`; None skips MINUTES_DIFF."""
     if cal_params is None:
-        cal, cal_apply = calibrate.load(), calibrate.effective_apply_to()
+        cal, cal_apply = calibrate.load(), calibrate.effective_apply_to(model=model)
     else:
         cal, cal_apply = cal_params, calibrate.APPLY_TO if cal_apply_to is None else cal_apply_to
     be = break_even(payout, legs)
@@ -306,6 +322,7 @@ def evaluate(lines: pd.DataFrame, target: pd.DataFrame, fits: dict[str, tuple[np
             "mean": mean, "mean_raw": mean_raw, "role_shift": mean - mean_raw, "sd": sd,
             "p_over": over, "p_push": push, "p_under": under, "p_more_cal": p_more, "p_less_cal": p_less,
             "p_side": p_side, "break_even": be, "edge": p_side - be,
+            "p_blend": blend(p_side, push), "edge_blend": blend(p_side, push) - be,
             "recent_min": recent, "min_p50": m50, "career_games": int(r["career_games"]), "flags": " ".join(flags),
         })
     res = pd.DataFrame(rows).reindex(columns=RESULT_COLS)
@@ -342,7 +359,7 @@ def compare(lines: pd.DataFrame, games: pd.DataFrame, schedule: pd.DataFrame, da
             f"ON: shifts each mean by previous-game starter ({ROLE_BIAS_MODEL} only)")
     res = evaluate(lines, target, fits, playoffs=playoffs, role_bias=use_bias, payout=payout, legs=legs,
                    stale=bool(stale), n_sims=n_sims, seed=seed, cal_params=cal_params, cal_apply_to=cal_apply_to,
-                   min_p50=min_p50)
+                   min_p50=min_p50, model=model)
     info = {"game": game, "playoffs": playoffs, "role_bias": use_bias, "role_bias_note": note, "stale": stale,
             "model": model, "data_cutoff": games["tip"].max().isoformat(), "break_even": break_even(payout, legs),
             "n_sims": n_sims, "seed": seed}
@@ -369,11 +386,12 @@ def append_log(res: pd.DataFrame, *, date: str, model: str, data_cutoff: str, pa
 
 
 def format_table(res: pd.DataFrame) -> str:
-    """Sorted for reading: biggest edge first, unmatched rows last."""
-    t = res.sort_values("edge", ascending=False, na_position="last", kind="stable")
+    """Sorted for reading: biggest Benter-blended edge first, unmatched rows last."""
+    t = res.sort_values("edge_blend", ascending=False, na_position="last", kind="stable")
     t = t[["player", "team", "market", "line", "side", "role", "mean", "sd", "p_more_cal", "p_less_cal",
-           "p_push", "p_side", "edge", "flags"]].copy()
-    t = t.round({"mean": 1, "sd": 1, "p_more_cal": 3, "p_less_cal": 3, "p_push": 3, "p_side": 3, "edge": 3})
+           "p_push", "p_side", "edge", "p_blend", "edge_blend", "flags"]].copy()
+    t = t.round({"mean": 1, "sd": 1, "p_more_cal": 3, "p_less_cal": 3, "p_push": 3, "p_side": 3, "edge": 3,
+                 "p_blend": 3, "edge_blend": 3})
     return t.to_string(index=False, na_rep="")
 
 

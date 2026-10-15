@@ -4,14 +4,22 @@ Backtest finding (walk-forward, 2023-2026): the model's over/under probabilities
 overconfident for points and PRA (fitted slope b ~ 0.8, intercept ~ 0): lopsided calls
 (e.g. 73%) should be pulled toward 50%. Applying the map trained only on earlier seasons
 improved log loss in 14 of 16 market-seasons, mostly points and PRA. Rebounds and assists
-showed no reliable gain at first. Oct 2026 re-check (walk-forward 2022-26, game-clustered
-bootstrap slope 0.84): assists improved in 4 of 5 held-out seasons -> calibrated. Rebounds
-(3 of 5, slope CI touches 1.0) stays uncalibrated.
+showed no reliable gain at first. Oct 9 2026 re-check on context_glm_plus2's rows (walk-forward 2022-26,
+game-clustered bootstrap slope 0.84): assists improved in 4 of 5 held-out seasons. Oct 10 2026, on the
+production model context_glm_plus2si, the rule below kept POINTS ONLY (PRA 4 of 5 but pooled +0.0009 <
+MIN_POOLED; assists and rebounds 3 of 5), which is what reports/calibration.json's _meta.apply_to says.
+The APPLY_TO constant (points, pra, assists) is only the fallback for older files without _meta.
 
 Which markets are calibrated: a calibration file may carry a "_meta" block (model, alpha_method,
 fit_seasons, n, apply_to), written by backtest.py / jobs/j08_v3_eval.py from the rule below. When the
 file has `apply_to`, that list decides (it was measured for that file's model); the module constant
 APPLY_TO is only the fallback for older files without it.
+
+The map belongs to the model it was fit on. A caller that names the model producing the probabilities
+(effective_apply_to(model=...) / calibrate(..., model=...); project.py and compare.py always do) gets
+NO calibration, plus a CalibrationModelMismatch warning, when the file's `_meta.model` names a different
+model. compare.py then flags those rows UNCALIBRATED. Files without `_meta.model` cannot be checked and
+keep the old behaviour.
 
 The rule (fit_by_rule): for each market, fit on seasons < s and score season s, for every season after
 the first; keep the market only if log loss improves in >= MIN_SEASONS held-out seasons AND the pooled
@@ -21,6 +29,7 @@ from __future__ import annotations
 
 import json
 import pathlib
+import warnings
 
 import numpy as np
 from scipy import optimize
@@ -83,21 +92,35 @@ def load_meta(path: pathlib.Path | None = None) -> dict:
     return json.loads(path.read_text()).get(META_KEY, {}) if path.exists() else {}
 
 
-def effective_apply_to(path: pathlib.Path | None = None) -> tuple[str, ...]:
-    """Markets to calibrate: the file's own `_meta.apply_to` when it has one, else the APPLY_TO fallback."""
+class CalibrationModelMismatch(UserWarning):
+    """The calibration file was fit on a different model's probabilities than the ones being calibrated."""
+
+
+def effective_apply_to(path: pathlib.Path | None = None, model: str | None = None) -> tuple[str, ...]:
+    """Markets to calibrate: the file's own `_meta.apply_to` when it has one, else the APPLY_TO fallback.
+
+    `model` = the model producing the probabilities. If the file's `_meta.model` names another model the
+    answer is () (calibrate nothing) and a CalibrationModelMismatch warning is emitted. model=None, or a
+    file without `_meta.model`, skips the check."""
     meta = load_meta(path)
+    fit_for = meta.get("model")
+    if model is not None and fit_for is not None and fit_for != model:
+        warnings.warn(f"calibration file was fit on {fit_for!r} probabilities, not {model!r}: "
+                      "leaving every market uncalibrated", CalibrationModelMismatch, stacklevel=2)
+        return ()
     return tuple(meta["apply_to"]) if "apply_to" in meta else APPLY_TO
 
 
-def calibrate(p, market: str, params: dict | None = None, apply_to=None):
+def calibrate(p, market: str, params: dict | None = None, apply_to=None, model: str | None = None):
     """Calibrated probability if `market` is to be calibrated and has parameters, else p unchanged.
 
-    With no `params` the production file is used, together with its own `_meta.apply_to`. Explicit
-    `params` fall back to the APPLY_TO constant unless `apply_to` is given (callers that loaded the
-    file themselves pass `effective_apply_to()`)."""
+    With no `params` the production file is used, together with its own `_meta.apply_to` (and, when
+    `model` is given, only if the file was fit for that model). Explicit `params` fall back to the
+    APPLY_TO constant unless `apply_to` is given (callers that loaded the file themselves pass
+    `effective_apply_to(model=...)`)."""
     if params is None:
         params = load()
-        apply_to = effective_apply_to() if apply_to is None else apply_to
+        apply_to = effective_apply_to(model=model) if apply_to is None else apply_to
     elif apply_to is None:
         apply_to = APPLY_TO
     if market in apply_to and market in params:

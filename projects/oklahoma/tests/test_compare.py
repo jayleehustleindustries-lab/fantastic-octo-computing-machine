@@ -152,6 +152,25 @@ def test_break_even_for_pickem_slips():
     assert res.side.iloc[0] == res.rec_side.iloc[0] == "MORE"                # mean 14 vs line 10.5
 
 
+
+def test_benter_blend_pulls_legs_toward_the_line_and_drives_the_sort():
+    res = run(lines_of(("Ann Starter", "points", 10.5, None), ("Ann Starter", "points", 14.0, None),
+                       ("Bea Bench", "points", 3.5, None)), payout=3.0, legs=2)
+    w = C.BENTER_W
+    expect = w * res.p_side + (1 - w) * (1 - res.p_push) * 0.5
+    assert (res.p_blend - expect).abs().max() < 1e-12
+    assert (res.edge_blend - (res.p_blend - res.break_even)).abs().max() < 1e-12
+    # A blend never moves a leg further from 50/50 than the model alone did.
+    assert ((res.p_blend - 0.5 * (1 - res.p_push)).abs() <= (res.p_side - 0.5 * (1 - res.p_push)).abs() + 1e-12).all()
+    # The Oct 9 lesson: raw 0.69 on a 3x 2-pick looks like +11% but blends below break-even.
+    assert C.blend(0.69) == pytest.approx(0.557)
+    assert C.blend(0.69) < C.break_even(3, 2) < 0.69
+    # The printed table is ordered by the blended edge, not the raw one (orders made opposite here).
+    t = res.copy()
+    t["player"] = ["P1", "P2", "P3"]
+    t["edge"], t["edge_blend"] = [-0.1, 0.0, 0.1], [0.1, 0.0, -0.1]
+    assert [r.split()[0] for r in C.format_table(t).splitlines()[1:]] == ["P1", "P2", "P3"]
+
 def test_calibration_applies_to_non_push_split_and_combos_shrink_toward_half():
     cal = {"points": (0.0, 0.8)}
     res = run(lines_of(("Ann Starter", "points", 14.0, None), ("Ann Starter", "rebounds", 5.5, None),
@@ -464,6 +483,7 @@ def test_project_outputs_unrounded_mu_alpha_model_and_cutoff(tmp_path, monkeypat
     games.to_parquet(path)
     monkeypatch.setattr(ingest, "GAMES_PATH", path)
     monkeypatch.setattr(P, "load_schedule", lambda season: schedule_of(games))
+    monkeypatch.setattr(calibrate, "PATH", tmp_path / "no_calibration.json")   # independent of the production file
     slate, res = P.project("2022-07-12", set(), model="context_glm")
     assert (res.model == "context_glm").all() and (res.data_cutoff == games["tip"].max().isoformat()).all()
     assert {"mu", "alpha"} <= set(res.columns) and res.mu.notna().all() and res.alpha.notna().all()
@@ -474,6 +494,45 @@ def test_project_outputs_unrounded_mu_alpha_model_and_cutoff(tmp_path, monkeypat
     assert P.get_model() is registry()["context_glm_plus2si"]
     with pytest.raises(SystemExit):
         P.get_model("no_such_model")
+
+
+def test_production_means_are_the_models_own_predicted_means_with_no_role_adjustment(tmp_path, monkeypatch):
+    # No role multiplier / starter shift on top of plus2si anywhere on the production path. In a playoff game (where
+    # the plus2 shift would fire) with the shift requested, project.py's mu and compare.py's mean for every row equal
+    # ContextGLMPlus2SI.predict_mean, fit independently here on the same training rows.
+    from oklahoma.models import ContextGLMPlus2SI
+    games = tiny_games()
+    sched = schedule_of(games)
+    path = tmp_path / "player_games.parquet"
+    games.to_parquet(path)
+    monkeypatch.setattr(ingest, "GAMES_PATH", path)
+    monkeypatch.setattr(P, "load_schedule", lambda season: sched)
+    slate = P.load_slate("2022-07-12", 2022, sched)
+    train, target = P.prepare(games, slate, set())
+    assert target["playoffs"].all() and target["starter_prev"].any() and not target["starter_prev"].all()
+    want = {s: ContextGLMPlus2SI(s).fit(train).predict_mean(target) for s in STATS}
+    names = target["athlete_display_name"].tolist()
+
+    proj = P.project("2022-07-12", set())[1]                                   # default model
+    assert (proj.model == PRODUCTION_MODEL).all()
+    for s in STATS:
+        got = proj[proj.market == s]
+        assert got["player"].tolist() == names
+        np.testing.assert_array_equal(got["mu"].to_numpy(), want[s])
+
+    lines = lines_of(*[(n, s, 9.5, None) for n in names for s in STATS])
+    res, info = compare_tiny(lines, games, sched, role_bias=True, minutes_flag=False)
+    assert info["playoffs"] and not info["role_bias"] and set(res.role) == {"S", "B"}
+    for s in STATS:
+        got = res[res.market == s]
+        assert got["player"].tolist() == names
+        np.testing.assert_array_equal(got["mean"].to_numpy(), want[s])
+        np.testing.assert_array_equal(got["mean_raw"].to_numpy(), want[s])
+        assert (got["role_shift"] == 0).all()
+    # A known row, spelled out: a bench player, the case the plus2 shift would have cut by 0.94 points.
+    i = names.index(target.loc[~target["starter_prev"], "athlete_display_name"].iloc[0])
+    row = res[(res.player == names[i]) & (res.market == "points")].iloc[0]
+    assert row.role == "B" and row["mean"] == want["points"][i] == proj[(proj.player == names[i]) & (proj.market == "points")]["mu"].iloc[0]
 
 
 def test_placeholder_rows_carry_zero_threes_and_box_columns_not_nan():

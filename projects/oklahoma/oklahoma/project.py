@@ -179,7 +179,8 @@ def project(date: str, out: set[str], add: set[str] = frozenset(),
                 "model": model, "data_cutoff": data_cutoff,
             })
     res = pd.DataFrame(out_rows)
-    cal, apply_to = calibrate.load(), calibrate.effective_apply_to()      # the file's own market list, if it has one
+    # The file's own market list, if it has one; none at all (with a warning) if the file was fit for another model.
+    cal, apply_to = calibrate.load(), calibrate.effective_apply_to(model=model)
     res["p_over_cal"] = [round(float(calibrate.calibrate(p, m, cal, apply_to)), 3)
                          for p, m in zip(res["p_over_fair"], res["market"])]
     res["low_history"] = res["games_of_history"] < min_prior_games

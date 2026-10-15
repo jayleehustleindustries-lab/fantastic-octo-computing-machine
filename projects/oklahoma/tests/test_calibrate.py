@@ -3,6 +3,7 @@
 Synthetic probabilities with fixed seeds; no network, no real data.
 """
 import json
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -68,6 +69,81 @@ def test_projector_follows_the_files_market_list(tmp_path, monkeypatch):
     assert only_points.iloc[1].p_more_cal == pytest.approx(raw(only_points.iloc[1]))
     assert both.iloc[1].p_more_cal != pytest.approx(raw(both.iloc[1]), abs=1e-4)
     assert only_points.iloc[0].p_more_cal == pytest.approx(both.iloc[0].p_more_cal)
+
+
+PROD_META = {"model": "context_glm_plus2si", "alpha_method": "x", "fit_seasons": [2021], "n": {}}
+
+
+def test_calibration_fit_for_another_model_is_not_applied_and_warns(tmp_path, monkeypatch):
+    path = tmp_path / "calibration.json"
+    monkeypatch.setattr(calibrate, "PATH", path)
+    calibrate.save({"points": (0.0, 0.8), "pra": (0.0, 0.8)}, path, meta={**PROD_META, "apply_to": ["points"]})
+    # The model the file was fit for: its apply_to decides, other markets pass through unchanged, no warning.
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        assert calibrate.effective_apply_to(model="context_glm_plus2si") == ("points",)
+        assert calibrate.calibrate(0.73, "points", model="context_glm_plus2si") < 0.73
+        assert calibrate.calibrate(0.73, "pra", model="context_glm_plus2si") == 0.73          # has params, not in apply_to
+        assert calibrate.calibrate(0.73, "rebounds", model="context_glm_plus2si") == 0.73     # no params at all
+    # Another model: nothing is calibrated, and the warning names both models.
+    with pytest.warns(calibrate.CalibrationModelMismatch, match="'context_glm_plus2si'.*'context_glm_plus2'"):
+        assert calibrate.effective_apply_to(model="context_glm_plus2") == ()
+    with pytest.warns(calibrate.CalibrationModelMismatch):
+        assert calibrate.calibrate(0.73, "points", model="context_glm_plus2") == 0.73
+    # Unchecked when the caller names no model, or the file names none (older files): the old behaviour.
+    assert calibrate.effective_apply_to() == ("points",) and calibrate.calibrate(0.73, "points") < 0.73
+    calibrate.save({"points": (0.0, 0.8)}, path)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        assert calibrate.effective_apply_to(model="anything") == calibrate.APPLY_TO
+
+
+def test_project_and_compare_skip_a_calibration_fit_for_another_model(tmp_path, monkeypatch):
+    # The production paths pass their model: plus2si probabilities get plus2si's map, any other model's get none.
+    from oklahoma import compare as C, ingest, project as P
+    from test_compare import compare_tiny, hand_fits, hand_target, last_roster, lines_of, schedule_of, tiny_games
+    path = tmp_path / "calibration.json"
+    monkeypatch.setattr(calibrate, "PATH", path)
+    calibrate.save({m: (0.0, 0.5) for m in ("points", "pra")}, path, meta={**PROD_META, "apply_to": ["points", "pra"]})
+    games = tiny_games()
+    games_path = tmp_path / "player_games.parquet"
+    games.to_parquet(games_path)
+    monkeypatch.setattr(ingest, "GAMES_PATH", games_path)
+    monkeypatch.setattr(P, "load_schedule", lambda season: schedule_of(games))
+
+    # project.py: p_over_cal differs from p_over_fair for the file's model, equals it for another model.
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", calibrate.CalibrationModelMismatch)
+        same = P.project("2022-07-12", set())[1]
+    cal = same.market.isin(["points", "pra"])
+    assert (same.model == "context_glm_plus2si").all()
+    assert (same.loc[cal, "p_over_cal"] != same.loc[cal, "p_over_fair"]).any()
+    assert (same.loc[~cal, "p_over_cal"] == same.loc[~cal, "p_over_fair"]).all()
+    with pytest.warns(calibrate.CalibrationModelMismatch):
+        other = P.project("2022-07-12", set(), model="context_glm_plus2")[1]
+    assert (other.p_over_cal == other.p_over_fair).all()
+
+    # compare.evaluate: the file's model calibrates points/pra; another model flags every single market UNCALIBRATED.
+    lines = lines_of(("Ann Starter", "points", 10.5, None), ("Ann Starter", "pra", 20.5, None),
+                     ("Ann Starter", "rebounds", 5.5, None), ("Ann Starter", "pr", 16.5, None))
+    raw = lambda r: r.p_over / (r.p_over + r.p_under) * (1 - r.p_push)
+    ok = C.evaluate(lines, hand_target(), hand_fits(), playoffs=False, model="context_glm_plus2si")
+    assert [("UNCALIBRATED" in f.split()) for f in ok["flags"]] == [False, False, True, False]
+    assert ok.iloc[0].p_more_cal != pytest.approx(raw(ok.iloc[0]), abs=1e-4)
+    with pytest.warns(calibrate.CalibrationModelMismatch):
+        bad = C.evaluate(lines, hand_target(), hand_fits(), playoffs=False, model="context_glm_plus2")
+    assert [("UNCALIBRATED" in f.split()) for f in bad["flags"]] == [True, True, True, False]   # pr: COMBO_UNCALIBRATED
+    for i in range(3):
+        assert bad.iloc[i].p_more_cal == pytest.approx(raw(bad.iloc[i]))
+    # compare(): the model it projects with reaches the check (cal_params=None reads the redirected file).
+    names = last_roster(games, "AAA")[:2]
+    tiny_lines = lines_of(*[(n, "points", 8.5, None) for n in names])
+    with pytest.warns(calibrate.CalibrationModelMismatch):
+        res, _ = compare_tiny(tiny_lines, games, schedule_of(games), model="context_glm_plus2", cal_params=None,
+                              minutes_flag=False)
+    assert res["flags"].str.split().map(lambda f: "UNCALIBRATED" in f).all()
+    res, _ = compare_tiny(tiny_lines, games, schedule_of(games), cal_params=None, minutes_flag=False)   # plus2si
+    assert not res["flags"].str.split().map(lambda f: "UNCALIBRATED" in f).any()
 
 
 def overconfident_rows(n=4000, seasons=range(2021, 2027), slope=0.6, seed=0):

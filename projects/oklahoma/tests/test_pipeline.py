@@ -80,10 +80,37 @@ def test_features_use_only_prior_games():
         pd.testing.assert_series_equal(upto[col], upto[f"{col}_t"], check_names=False, obj=col)
     # And it must matter afterwards, or the test proves nothing.
     later = merged[(merged["tip"] > tip_target) & merged["athlete_id"].isin(games.loc[hit, "athlete_id"])]
-    for col in ["reb_ewm", "points_ewm", "opp_points_ratio", "usage_pm_ewm", "pace_ratio"]:
+    for col in ["reb_ewm", "points_ewm", "opp_points_ratio", "usage_pm_ewm", "pace_ratio", "season_min_pg"]:
         assert not np.allclose(later[col], later[f"{col}_t"], equal_nan=True), col
     # starter_prev carries the flipped flag into the player's next game (so the tamper is visible downstream).
     assert (later["starter_prev"] != later["starter_prev_t"]).any()
+
+
+def test_season_min_pg_uses_only_strictly_prior_games_of_the_season():
+    # season_min_pg feeds the minutes model behind compare.py's MINUTES_DIFF flag. Corrupt ONE future game's minutes
+    # for one player: her season_min_pg up to and including that game must not move; only later games of the season do.
+    games = synthetic_games(absence_rate=0.0)
+    pid, season = 101, 2021
+    mine = games[games["athlete_id"] == pid].sort_values("tip")
+    this = mine[mine["season"] == season]
+    victim = this.iloc[len(this) // 2]
+    tampered = games.copy()
+    tampered.loc[(tampered["athlete_id"] == pid) & (tampered["game_id"] == victim["game_id"]), "minutes"] = 999.0
+    col = lambda f: f[f["athlete_id"] == pid].set_index("game_id")["season_min_pg"]
+    base, after = col(build_features(games)), col(build_features(tampered))
+
+    upto = this.loc[this["tip"] <= victim["tip"], "game_id"]
+    later = this.loc[this["tip"] > victim["tip"], "game_id"]
+    assert len(upto) >= 3 and len(later) >= 3
+    pd.testing.assert_series_equal(base.loc[upto], after.loc[upto])
+    # The definition, exactly: mean of her strictly earlier minutes this season (NaN before her first game of it).
+    expected = this["minutes"].shift(1).expanding().mean().to_numpy()
+    np.testing.assert_allclose(base.loc[this["game_id"]].to_numpy(), expected, equal_nan=True)
+    assert np.isnan(base.loc[this["game_id"].iloc[0]])
+    # The corruption is visible afterwards (so the check above is not vacuous) and does not cross into next season.
+    assert (after.loc[later] > base.loc[later] + 10).all()
+    nxt = mine.loc[mine["season"] == season + 1, "game_id"]
+    pd.testing.assert_series_equal(base.loc[nxt], after.loc[nxt])
 
 
 def test_teammates_out_counts_missing_rotation_player():

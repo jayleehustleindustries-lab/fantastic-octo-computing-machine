@@ -148,6 +148,8 @@ What changed (numbers and tables are in `COMPUTE_PLAN.md`, "Results so far"):
   pooled gain is >= 0.001. Result for plus2si: **points only** (PRA 4 of 5 but +0.0009; assists 3 of 5; rebounds 3 of 5). `calibrate.calibrate()` now follows the
   `apply_to` list inside `reports/calibration.json` (`_meta`); the module constant is a fallback for older files. So PRA, assists and rebounds probabilities are
   raw model probabilities and `compare.py` marks them UNCALIBRATED. Old file: `reports/calibration_v2_backup.json`.
+  The map is also tied to its model: `project.py` and `compare.py` pass their `--model`, and if `_meta.model` names a different
+  model nothing is calibrated (a `CalibrationModelMismatch` warning; `compare.py` flags every single market UNCALIBRATED).
 - **`python -m oklahoma.backtest`** takes `--out-dir` and `--production-model`; its default model list now ends with the production model and it writes the calibration
   file with `_meta`. Production rows (`reports/backtest_rows.parquet`) were regenerated on the current data; the old file is `reports/backtest_rows_v2_backup.parquet`.
   The v3 experiment lives in `reports/v3/` (`jobs/j08_v3_eval.py`: bootstraps, gate, calibration check).
@@ -160,7 +162,8 @@ What changed (numbers and tables are in `COMPUTE_PLAN.md`, "Results so far"):
   (0.316 min MAE gain, coverage 0.807) but thinly: seed 2 alone fails, and playoff coverage is 0.767. Not wired into the projections yet, only into the flag.
 - **3PM model** now fits dispersion per fifth of the predicted mean like the other markets.
 - Plugin `oklahoma-slate` (outside this repo): its daily-slate skill now runs `oklahoma.compare`.
-- 70 tests pass (16 at the end of Round 6).
+- 74 tests pass (16 at the end of Round 6). Added in review: calibration/model mismatch (project + compare), production means equal
+  `ContextGLMPlus2SI.predict_mean` with no role shift, and a direct `season_min_pg` leakage test.
 
 Still open: the 2027 playoff confirmation above; real prop odds (see Next); the copula (`jobs/j02`) was fit on plus2 rows, not refit on plus2si;
 `reports/summary.txt` is from the earlier backtest (the current numbers are in `reports/v3_full/summary.txt`); `MANUS_QUEUE.md` still quotes an old test count.
