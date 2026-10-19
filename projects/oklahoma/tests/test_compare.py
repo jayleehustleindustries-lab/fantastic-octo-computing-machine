@@ -172,6 +172,16 @@ def test_benter_blend_pulls_legs_toward_the_line_and_drives_the_sort():
     assert [r.split()[0] for r in C.format_table(t).splitlines()[1:]] == ["P1", "P2", "P3"]
 
 
+def test_break_even_follows_slip_size_on_every_row():
+    # Every row is priced against the slip it is for, not a 2-pick default.
+    for payout, legs in ((6.0, 3), (20.0, 5), (10.0, 4)):
+        res = run(lines_of(("Ann Starter", "points", 10.5, None), ("Bea Bench", "points", 3.5, "LESS")),
+                  payout=payout, legs=legs)
+        assert (res.break_even - payout ** (-1 / legs)).abs().max() < 1e-12
+        assert (res.edge_blend - (res.p_blend - res.break_even)).abs().max() < 1e-12
+        assert (res.edge - (res.p_side - res.break_even)).abs().max() < 1e-12
+
+
 def test_caller_side_drives_p_side_and_blend_even_against_the_model():
     # Ann: mean 14 vs 10.5 -> model says MORE. Bea: mean 4 vs 6.5 -> model says LESS. Each priced all three ways.
     res = run(lines_of(("Ann Starter", "points", 10.5, "MORE"), ("Ann Starter", "points", 10.5, "LESS"),
