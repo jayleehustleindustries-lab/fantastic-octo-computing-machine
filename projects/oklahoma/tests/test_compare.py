@@ -171,6 +171,24 @@ def test_benter_blend_pulls_legs_toward_the_line_and_drives_the_sort():
     t["edge"], t["edge_blend"] = [-0.1, 0.0, 0.1], [0.1, 0.0, -0.1]
     assert [r.split()[0] for r in C.format_table(t).splitlines()[1:]] == ["P1", "P2", "P3"]
 
+
+def test_caller_side_drives_p_side_and_blend_even_against_the_model():
+    # Ann: mean 14 vs 10.5 -> model says MORE. Bea: mean 4 vs 6.5 -> model says LESS. Each priced all three ways.
+    res = run(lines_of(("Ann Starter", "points", 10.5, "MORE"), ("Ann Starter", "points", 10.5, "LESS"),
+                       ("Ann Starter", "points", 10.5, None), ("Bea Bench", "points", 6.5, "MORE"),
+                       ("Bea Bench", "points", 6.5, "LESS"), ("Bea Bench", "points", 6.5, None)), payout=3.0, legs=2)
+    assert res.rec_side.tolist() == ["MORE"] * 3 + ["LESS"] * 3
+    assert res.side.tolist() == ["MORE", "LESS", "MORE", "MORE", "LESS", "LESS"]
+    more = res.side == "MORE"
+    assert (res.p_side[more] == res.p_more_cal[more]).all()
+    assert (res.p_side[~more] == res.p_less_cal[~more]).all()
+    assert (res.p_blend - C.blend(res.p_side, res.p_push)).abs().max() < 1e-12
+    assert (res.edge_blend - (res.p_blend - res.break_even)).abs().max() < 1e-12
+    # Betting against the model scores worse than the model's own side, not a copy of it.
+    assert res.edge_blend.iloc[1] < res.edge_blend.iloc[0] == res.edge_blend.iloc[2]
+    assert res.edge_blend.iloc[3] < res.edge_blend.iloc[4] == res.edge_blend.iloc[5]
+
+
 def test_calibration_applies_to_non_push_split_and_combos_shrink_toward_half():
     cal = {"points": (0.0, 0.8)}
     res = run(lines_of(("Ann Starter", "points", 14.0, None), ("Ann Starter", "rebounds", 5.5, None),
