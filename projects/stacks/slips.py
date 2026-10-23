@@ -66,6 +66,8 @@ def build(legs_path, payouts_path, bankroll=100.0):
         for combo in itertools.combinations(legs, n):
             if len({(l["player"], l["market"]) for l in combo}) < n:
                 continue
+            if n > 1 and any(l.get("inj_tag") for l in combo):
+                continue                  # H1: injury-tagged players post more duds; never stack them
             p = p_all(list(combo))
             ev = mult * p - 1
             b = mult - 1
