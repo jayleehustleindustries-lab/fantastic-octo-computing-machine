@@ -1,0 +1,32 @@
+hook_id,hook_type,hook,why_it_works
+H01,Pain callout,Still writin' quotes in your truck at 9 at night?,"Names a specific, familiar pain in the first 2s"
+H02,Pain callout,Your crew went to the wrong house. Again.,Instant recognition for anyone running a crew
+H03,Pain callout,You did the work. Why you still chasin' the money?,Late payment is the most shared frustration
+H04,Pain callout,"Three apps, a spreadsheet, and a whiteboard ain't a system.",Calls out tool sprawl
+H05,Pain callout,Job's done. Invoice ain't. Sound familiar?,"Short, rhythmic, relatable"
+H06,Pattern interrupt,Hold up. Put the clipboard down.,Command + visual prop breaks the scroll
+H07,Pattern interrupt,This here's what my Sundays used to look like.,Before shot sets up a transformation
+H08,Pattern interrupt,I fired my whiteboard.,Absurd line makes people stay for the payoff
+H09,Pattern interrupt,"Watch me book, send, and bill a job 'fore this video ends.",Built-in timer keeps watch time high
+H10,Contrarian,Hot take: more software's why you're drownin'.,Disagreement drives comments
+H11,Contrarian,You don't need more leads. You need to quit losin' the ones you got.,Flips the usual advice
+H12,Contrarian,Hirin' more office help ain't gonna fix this.,Challenges a costly assumption
+H13,Contrarian,Best contractors I know don't answer the phone on the job.,Curiosity plus authority
+H14,Versus,I quit my old field-service app. Here's what changed.,Comparison without naming a brand
+H15,Versus,"Same job, two apps. Count the taps.",Side-by-side demo the viewer can check
+H16,Versus,Built by folks who've actually been up on a roof.,Positions against office-built tools
+H17,POV,POV: your schedule fixes itself when a job runs long.,Puts the viewer in the outcome
+H18,POV,POV: customer signed the quote 'fore you left the driveway.,Shows a concrete win
+H19,POV,POV: you're on the job site and your office fits in your pocket.,Pairs with job-site b-roll
+H20,POV,POV: it's Friday and every invoice is paid.,"Aspirational, end-of-week timing"
+H21,Curiosity gap,The one screen I check 'fore every job.,Viewer waits for the reveal
+H22,Curiosity gap,This one button saved me a whole day last week.,"Small action, big payoff"
+H23,Curiosity gap,Nobody tells new contractors this 'bout schedulin'.,Insider knowledge framing
+H24,Curiosity gap,Almost didn't post this. My competition's gonna use it.,Exclusivity drives saves
+H25,Challenge,Run your whole outfit from your phone for one week. I dare ya.,Invites participation and duets
+H26,Challenge,Time yourself writin' a quote. Now watch me.,Creates a direct comparison
+H27,Challenge,Tell me your trade in the comments. I'll show you your setup.,Comment bait that yields follow-up videos
+H28,Story,Day one of runnin' my business off one app.,Series format brings people back
+H29,Story,The text from a customer that made me change everything.,"Emotional, narrative pull"
+H30,Story,Lost a [REAL $ AMOUNT] job over one missed callback. Never again.,Specific stakes; use a true number only
+H31,Story,Day ten on one app. Here's what broke.,Series payoff; rewards people who followed day one
