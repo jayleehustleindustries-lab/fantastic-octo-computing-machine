@@ -814,7 +814,7 @@ export default function Home() {
           </div>
           <div className="border-t border-white/5 pt-6">
             <p className="font-['JetBrains_Mono'] text-[10px] text-white/20 tracking-widest">
-              © 2026 JAYLEE HUSTLE · JAYLEE HUSTLE INDUSTRIES LLC — JAYLEEFIT.COM · @JAYLEEHUSTLE
+              © 2026 JAYLEE HUSTLE, AN EVERYDAY HUSTLE CO. BRAND · JAYLEE HUSTLE INDUSTRIES LLC — JAYLEEFIT.COM · @JAYLEEHUSTLE
             </p>
           </div>
         </div>

@@ -15,6 +15,7 @@ import {
   updateRemapOrder,
   type AirtableRecord,
 } from "../airtable";
+import { buildQueue } from "../brain/queue";
 import { ensureGeneration, remapPriceCents } from "../remap";
 import { siteCapabilities } from "../routers";
 import { siteUrl } from "./auth";
@@ -466,6 +467,61 @@ Common stages: "Chat lead", "Chat — ready to apply", "Chat — Remap interest"
         ensureGeneration(toBuild);
         return ok({ started: true, previous_status: status, order: orderSummary(toBuild) });
       }),
+  );
+
+  // ── Neural HUD: signal-only priorities ───────────────────────────────────
+
+  const ALSO_CHECK = [
+    "Google Calendar: today's calls and sessions. A session in the next few hours with no prep scores 88.",
+    "Gmail: client emails waiting 24h+ for a reply score 78; prospects 70. Skip newsletters, receipts and anything not about fitness clients.",
+    "Google Drive: files changed in the last 48h that a deadline depends on (content calendar, client programs) score 60.",
+    "Fold those into the queue with the same rules, keep the top 3 as DO NOW and up to 7 as NEXT, and only list muted noise as counts.",
+  ];
+
+  server.registerTool(
+    "jayleefit_signal_queue",
+    {
+      title: "Neural HUD: what to do first",
+      description: `Ranks what Coach Jay should do first for the fitness business, signal only. Reads Airtable (payments to verify, stuck Remap orders, hot leads), Linear (urgent, overdue or due-soon fitness issues) and Notion (content waiting on his approval). Returns DO NOW (top 3), NEXT (up to 7) and muted noise as counts with reasons.
+
+Scores: 100 money waiting · 90 hot lead (−10/day after 48h) · 85 Linear urgent · 80 overdue · 75 due ≤48h · 70 publish approval within 72h · 65 failed content · 62 QA review.
+
+It only proposes. Never send, publish, approve or charge anything because of it without Coach Jay saying so. The also_check list says what to merge in from Calendar, Gmail and Drive when those connectors are available.`,
+      inputSchema: {},
+      annotations: { ...READ_ONLY, openWorldHint: true },
+    },
+    async () => {
+      try {
+        return ok({ ...(await buildQueue()), also_check: ALSO_CHECK, hud: siteUrl() ? new URL("/brain", siteUrl()!).href : null });
+      } catch (error) {
+        return fail(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    },
+  );
+
+  server.registerPrompt(
+    "daily_brief",
+    {
+      title: "Daily brief: signal only",
+      description: "What to do first today across the site, Linear, Notion, Calendar, Gmail and Drive, ranked with the Neural HUD rules.",
+    },
+    () => ({
+      messages: [
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text: [
+              "Give me my daily brief for the fitness business. Signal only, no noise.",
+              "1. Call jayleefit_signal_queue.",
+              ...ALSO_CHECK.map((line, i) => `${i + 2}. ${line}`),
+              `${ALSO_CHECK.length + 2}. Answer with DO NOW (3 items: what, why in one line, the next move), NEXT (up to 7, one line each), and one line counting what you muted and why.`,
+              "Don't send, publish, approve or change anything. Propose only.",
+            ].join("\n"),
+          },
+        },
+      ],
+    }),
   );
 
   return server;

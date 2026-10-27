@@ -47,7 +47,7 @@ export const mcpConfigured = () => mcpConfigProblem() === null;
 
 // ── Signed values ───────────────────────────────────────────────────────────
 
-type Kind = "client" | "login" | "code" | "access" | "refresh";
+type Kind = "client" | "login" | "code" | "access" | "refresh" | "brain";
 
 const mac = (data: string) => crypto.createHmac("sha256", process.env.MCP_SIGNING_SECRET!).update(data).digest("base64url");
 
@@ -75,10 +75,18 @@ function unseal<T extends Record<string, unknown>>(kind: Kind, value: unknown): 
 
 const clientSecretFor = (clientId: string) => mac(`client-secret.${clientId}`);
 
-function passwordMatches(given: string): boolean {
+export function passwordMatches(given: string): boolean {
   const hash = (s: string) => crypto.createHash("sha256").update(s).digest();
   return crypto.timingSafeEqual(hash(given), hash(process.env.MCP_OWNER_PASSWORD ?? ""));
 }
+
+// ── Owner session for the Neural HUD page (/brain) ──────────────────────────
+
+const BRAIN_SESSION_SECONDS = 12 * 60 * 60;
+export const BRAIN_COOKIE = "jlh_brain";
+export const brainSessionSeconds = () => BRAIN_SESSION_SECONDS;
+export const sealBrainSession = () => seal("brain", { owner: true }, BRAIN_SESSION_SECONDS);
+export const brainSessionValid = (value: unknown) => unseal<{ owner: boolean }>("brain", value)?.owner === true;
 
 export function redirectAllowed(uri: string): boolean {
   if (CLAUDE_CALLBACKS.includes(uri)) return true;

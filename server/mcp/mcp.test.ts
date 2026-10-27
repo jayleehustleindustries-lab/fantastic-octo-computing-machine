@@ -18,6 +18,7 @@ vi.mock("../airtable", async importOriginal => ({
 }));
 
 import { registerMcp } from "./index";
+import { registerBrain } from "../brain";
 import { resetLimits } from "../claude";
 
 const PASSWORD = "correct horse battery";
@@ -36,6 +37,7 @@ beforeAll(async () => {
   process.env.MCP_OWNER_PASSWORD = PASSWORD;
   process.env.MCP_SIGNING_SECRET = "s".repeat(48);
   registerMcp(app);
+  registerBrain(app);
 });
 
 afterAll(() => {
@@ -173,7 +175,7 @@ describe("website MCP tools", () => {
     expect(names).toEqual(expect.arrayContaining([
       "jayleefit_site_info", "jayleefit_calculate_numbers", "jayleefit_site_status", "jayleefit_list_leads",
       "jayleefit_get_lead", "jayleefit_list_remap_orders", "jayleefit_get_remap_order", "jayleefit_list_payment_reports",
-      "jayleefit_find_client", "jayleefit_update_lead_stage", "jayleefit_set_payment_status", "jayleefit_retry_remap",
+      "jayleefit_find_client", "jayleefit_update_lead_stage", "jayleefit_set_payment_status", "jayleefit_retry_remap", "jayleefit_signal_queue",
     ]));
 
     const calc = await rpc(tokens.access_token, "tools/call", {
@@ -204,5 +206,43 @@ describe("website MCP tools", () => {
     });
     expect(res.body.result.isError).toBe(true);
     expect(res.body.result.content[0].text).toContain("inches");
+  });
+});
+
+describe("Neural HUD", () => {
+  it("ranks the queue through the connector and offers the daily brief prompt", async () => {
+    const { tokens } = await signIn();
+    const res = await rpc(tokens.access_token, "tools/call", { name: "jayleefit_signal_queue", arguments: {} });
+    const queue = res.body.result.structuredContent;
+    expect(queue.do_now.length).toBeGreaterThan(0);
+    expect(queue.do_now[0].score).toBeGreaterThanOrEqual(queue.do_now.at(-1).score);
+    expect(queue.sources).toEqual(expect.arrayContaining([
+      expect.objectContaining({ source: "airtable", connected: true }),
+      expect.objectContaining({ source: "linear", connected: false }),
+      expect.objectContaining({ source: "notion", connected: false }),
+    ]));
+    expect(queue.also_check.join(" ")).toContain("Gmail");
+    expect(queue.hud).toBe(`${base}/brain`);
+
+    const prompts = await rpc(tokens.access_token, "prompts/list");
+    expect(prompts.body.result.prompts.map((p: { name: string }) => p.name)).toContain("daily_brief");
+    const brief = await rpc(tokens.access_token, "prompts/get", { name: "daily_brief" });
+    expect(brief.body.result.messages[0].content.text).toContain("jayleefit_signal_queue");
+  });
+
+  it("keeps the HUD API behind the owner password", async () => {
+    expect((await fetch(`${base}/api/brain/queue`)).status).toBe(401);
+    const json = (password: string) => ({ method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password }) });
+    expect((await fetch(`${base}/api/brain/login`, json("wrong password!"))).status).toBe(401);
+    const login = await fetch(`${base}/api/brain/login`, json(PASSWORD));
+    expect(login.status).toBe(200);
+    const cookie = login.headers.get("set-cookie")!;
+    expect(cookie).toMatch(/HttpOnly/i);
+    expect(cookie).toMatch(/SameSite=Strict/i);
+    const queue = await fetch(`${base}/api/brain/queue`, { headers: { cookie: cookie.split(";")[0] } });
+    expect(queue.status).toBe(200);
+    expect(await queue.json()).toHaveProperty("do_now");
+    const tampered = cookie.split(";")[0].replace(/.$/, c => (c === "A" ? "B" : "A"));
+    expect((await fetch(`${base}/api/brain/queue`, { headers: { cookie: tampered } })).status).toBe(401);
   });
 });

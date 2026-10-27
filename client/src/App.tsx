@@ -4,6 +4,7 @@ import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import Brain from "./pages/Brain";
 import Home from "./pages/Home";
 import Remap from "./pages/Remap";
 import RemapProgram from "./pages/RemapProgram";
@@ -14,6 +15,7 @@ function Router() {
     <Switch>
       <Route path={"/"} component={Home} />
       <Route path={"/remap"} component={Remap} />
+      <Route path={"/brain"} component={Brain} />
       <Route path={"/remap/p/:token"} component={RemapProgram} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
