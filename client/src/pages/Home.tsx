@@ -12,7 +12,7 @@ import { captureRef } from "@/lib/visit";
 
 // ── Versioned campaign assets served with the application ──────────────────
 const ASSETS = {
-  coachPortrait: "/images/coach-jay.jpg",
+  coachPortrait: "/images/coach-jay-flex.jpg",
   galleryOperatorFocus: "/images/operator-focus.jpg",
   galleryAbsoluteFocus: "/images/absolute-focus.jpg",
   galleryTheVisionary: "/images/the-visionary.jpg",
