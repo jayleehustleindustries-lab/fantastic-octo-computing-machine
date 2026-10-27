@@ -30,7 +30,7 @@ function Nav({ activeSection }: { activeSection: string }) {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-hud/20">
       <div className="max-w-7xl mx-auto px-4 flex items-center justify-between h-14">
-        <a href="#" className="flex items-center gap-2 font-['Chakra_Petch'] font-semibold text-base tracking-[0.25em] text-white"><span aria-hidden="true" className="h-2 w-2 rotate-45 border border-hud bg-hud/30" />JAYLEE FIT</a>
+        <a href="#" className="flex items-center gap-2 font-['Chakra_Petch'] font-semibold text-base tracking-[0.25em] text-white"><span aria-hidden="true" className="h-2 w-2 rotate-45 border border-hud bg-hud/30" />EVERYDAY HUSTLE CO.</a>
         {/* Desktop nav */}
         <div className="hidden lg:flex items-center gap-5">
           {links.map(l => (
@@ -458,7 +458,7 @@ export default function Home() {
           <div>
             <BootLine />
             <div className="font-['JetBrains_Mono'] text-xs text-white/40 tracking-widest mt-4 mb-6">
-              JAYLEE FIT ·· EST. JAYLEE HUSTLE INDUSTRIES LLC
+              EVERYDAY HUSTLE CO. ·· EST. JAYLEE HUSTLE INDUSTRIES LLC
             </div>
             <div className="mb-4">
               <h1 className="font-['Bebas_Neue'] text-[120px] md:text-[180px] leading-none text-white tracking-tight hud-glow">MAO</h1>
@@ -587,12 +587,12 @@ export default function Home() {
           <div>
             <img src={ASSETS.coachPortrait} alt="Coach Jay — Jordan Lee" className="w-full max-w-sm object-cover" />
             <div className="font-['JetBrains_Mono'] text-[10px] text-white/30 tracking-widest mt-3">
-              FOUNDER & COACH · HOT SPRINGS, ARKANSAS · JAYLEE FIT — JLH INDUSTRIES LLC
+              FOUNDER & COACH · HOT SPRINGS, ARKANSAS · EVERYDAY HUSTLE CO. — JLH INDUSTRIES LLC
             </div>
           </div>
           <div>
             <div className="font-['Bebas_Neue'] text-2xl text-white mb-6 border-l-2 border-hud pl-4">
-              JAYLEE FIT IS NOT A GYM. IT IS AN OPERATING SYSTEM FOR YOUR BODY.
+              EVERYDAY HUSTLE CO. IS NOT A GYM. IT IS AN OPERATING SYSTEM FOR YOUR BODY.
             </div>
             {COACH.bio.map((para, i) => (
               <p key={i} className={`font-['JetBrains_Mono'] text-sm text-white/70 leading-relaxed ${i === COACH.bio.length - 1 ? "mb-8" : "mb-4"}`}>{para}</p>
@@ -640,7 +640,7 @@ export default function Home() {
         </div>
         {lightboxImg && (
           <div role="dialog" aria-modal="true" aria-label="Expanded gallery image" className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4" onClick={() => setLightboxImg(null)}>
-            <img src={lightboxImg} alt="Expanded JayLee Fit gallery" className="max-h-[90vh] max-w-full object-contain" onClick={event => event.stopPropagation()} />
+            <img src={lightboxImg} alt="Expanded Everyday Hustle Co. gallery" className="max-h-[90vh] max-w-full object-contain" onClick={event => event.stopPropagation()} />
             <button type="button" autoFocus onClick={() => setLightboxImg(null)} className="absolute top-4 right-4 min-h-11 px-4 text-white bg-black/70 font-['JetBrains_Mono'] text-xs tracking-widest hover:text-hud">CLOSE ✕</button>
           </div>
         )}
@@ -784,7 +784,7 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-4">
           <div className="grid md:grid-cols-3 gap-8 mb-8">
             <div>
-              <div className="font-['Bebas_Neue'] text-2xl text-white mb-3">JAYLEE FIT</div>
+              <div className="font-['Bebas_Neue'] text-2xl text-white mb-3">EVERYDAY HUSTLE CO.</div>
               <p className="font-['JetBrains_Mono'] text-xs text-white/40 leading-relaxed">High-performance coaching portal. Body recomposition, personal training, and hustle coaching orchestrated by the MAO operating system. Investment tiers — not subscriptions. By application only.</p>
             </div>
             <div>
@@ -807,7 +807,7 @@ export default function Home() {
           </div>
           <div className="border-t border-white/5 pt-6">
             <p className="font-['JetBrains_Mono'] text-[10px] text-white/20 tracking-widest">
-              © 2026 JAYLEE FIT · JAYLEE HUSTLE INDUSTRIES LLC — JAYLEEFIT.COM · MAO METHODOLOGY
+              © 2026 EVERYDAY HUSTLE CO. · JAYLEE HUSTLE INDUSTRIES LLC · MAO METHODOLOGY
             </p>
           </div>
         </div>

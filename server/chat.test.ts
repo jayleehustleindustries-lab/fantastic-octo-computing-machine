@@ -104,7 +104,7 @@ describe("askJay", () => {
   it("turns a refusal into a friendly redirect", async () => {
     create.mockResolvedValue({ stop_reason: "refusal", content: [] });
     const result = await askJay(history, vi.fn());
-    expect(result.reply).toMatch(/JayLee Fit coaching/);
+    expect(result.reply).toMatch(/Everyday Hustle Co\. coaching/);
   });
 });
 

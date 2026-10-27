@@ -79,7 +79,7 @@ export type ChatLeadHandoff = { name: string; email: string; goal: string; next:
 export type ChatResult = { reply: string; lead?: ChatLeadHandoff };
 
 const REFUSAL_REPLY =
-  "I can't help with that one. I'm here for questions about JayLee Fit coaching, starting plans, and applying. What are you working toward?";
+  "I can't help with that one. I'm here for questions about Everyday Hustle Co. coaching, starting plans, and applying. What are you working toward?";
 
 export async function askJay(history: ChatHistory, saveLead: SaveLead): Promise<ChatResult> {
   if (!claudeConfigured()) throw new Error("Ask Jay is not switched on yet.");

@@ -14,7 +14,7 @@ export function loginPage({ form, clientName, error, expired }: LoginPageOptions
   const who = escapeHtml(clientName?.trim() || "Claude");
   const body = expired || !form
     ? `<p class="lead">This sign-in link has expired.</p><p class="muted">Go back to Claude and press Connect again.</p>`
-    : `<p class="lead"><strong>${who}</strong> wants access to the JayLee Fit site: leads, Remap orders, clients and payment reports.</p>
+    : `<p class="lead"><strong>${who}</strong> wants access to the Everyday Hustle Co. site: leads, Remap orders, clients and payment reports.</p>
       <form method="post" action="/mcp-login">
         <input type="hidden" name="form" value="${escapeHtml(form)}">
         <label for="password">OWNER PASSWORD</label>
@@ -31,7 +31,7 @@ export function loginPage({ form, clientName, error, expired }: LoginPageOptions
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>Connect Claude · JayLee Fit</title>
+<title>Connect Claude · Everyday Hustle Co.</title>
 <style>
   :root { color-scheme: dark; }
   * { box-sizing: border-box; }

@@ -28,7 +28,7 @@ export function registerMcp(app: Express): void {
       issuerUrl: site,
       resourceServerUrl: resource,
       scopesSupported: [MCP_SCOPE],
-      resourceName: "JayLee Fit",
+      resourceName: "Everyday Hustle Co.",
     }),
   );
 
