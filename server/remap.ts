@@ -116,7 +116,7 @@ export async function startCheckout(intake: RemapIntake, origin: string): Promis
         unit_amount: cents,
         product_data: {
           name: "Remap — personal training program",
-          description: "Your custom 4–12 week program, BMR and calorie targets, and protein/carb/fat macros, built for you by Everyday Hustle Co.",
+          description: "Your custom 4–12 week program, BMR and calorie targets, and protein/carb/fat macros, built for you by JayLee Hustle.",
         },
       },
     }],

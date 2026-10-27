@@ -152,9 +152,9 @@ export function createMcpServer(): McpServer {
   server.registerTool(
     "jayleefit_site_info",
     {
-      title: "Everyday Hustle Co. offers and coach info",
+      title: "JayLee Hustle offers and coach info",
       description:
-        "What Everyday Hustle Co. sells and how it works: the Remap self-guided program (with its current price), the three coaching tiers (Foundation, Recomp, Legacy; coaching prices are only shared after an application is qualified), services, Coach Jay's bio, and the application steps. Use this before describing an offer.",
+        "What JayLee Hustle sells and how it works: the Remap self-guided program (with its current price), the three coaching tiers (Foundation, Recomp, Legacy; coaching prices are only shared after an application is qualified), services, Coach Jay's bio, and the application steps. Use this before describing an offer.",
       inputSchema: {},
       annotations: PUBLIC_READ,
     },

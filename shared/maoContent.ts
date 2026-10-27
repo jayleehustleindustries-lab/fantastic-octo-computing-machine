@@ -56,9 +56,9 @@ export const TERMS = [
 export const COACH = {
   name: "Jordan Lee (\"Coach Jay\")",
   base: "Hot Springs, Arkansas",
-  company: "Everyday Hustle Co., part of JayLee Hustle Industries LLC",
+  company: "JayLee Hustle Industries LLC",
   bio: [
-    "Jordan Lee — \"Coach Jay\" — is the founder of Everyday Hustle Co. (JayLee Hustle Industries LLC), based in Hot Springs, Arkansas. He built his coaching approach on one belief: sustainable progress comes from realistic systems, not extreme programs that fall apart in week two. MAO is his operating framework for consistent training and accountability.",
+    "Jordan Lee — \"Coach Jay\" — is the founder of JayLee Hustle Industries LLC, based in Hot Springs, Arkansas. He built his coaching approach on one belief: sustainable progress comes from realistic systems, not extreme programs that fall apart in week two. MAO is his operating framework for consistent training and accountability.",
     "Jordan coaches founders, athletes, and busy dads specifically because he understands the life — the early mornings, the packed schedules, the guilt of putting yourself last. His approach strips away the noise and builds programs that actually fit your week, your equipment, and your energy. Home-based training. No gym required. Real accountability.",
   ],
   blocks: [

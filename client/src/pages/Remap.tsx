@@ -119,7 +119,7 @@ export default function Remap() {
       <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-hud/20">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
           <a href="/" className="flex items-center gap-2 font-['Chakra_Petch'] font-semibold text-base tracking-[0.25em] text-white">
-            <span aria-hidden="true" className="h-2 w-2 rotate-45 border border-hud bg-hud/30" />EVERYDAY HUSTLE CO.
+            <span aria-hidden="true" className="h-2 w-2 rotate-45 border border-hud bg-hud/30" />JAYLEE HUSTLE
           </a>
           <a href="/#investment" className="font-['JetBrains_Mono'] text-[10px] tracking-widest text-white/60 hover:text-white">COACHING PACKAGES</a>
         </div>

@@ -28,7 +28,7 @@ export default function RemapProgram() {
       <header className="relative z-10 border-b border-hud/20 print:hidden">
         <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
           <a href="/" className="flex items-center gap-2 font-['Chakra_Petch'] font-semibold text-base tracking-[0.25em] text-white">
-            <span aria-hidden="true" className="h-2 w-2 rotate-45 border border-hud bg-hud/30" />EVERYDAY HUSTLE CO.
+            <span aria-hidden="true" className="h-2 w-2 rotate-45 border border-hud bg-hud/30" />JAYLEE HUSTLE
           </a>
           <span className="font-['JetBrains_Mono'] text-[10px] tracking-widest text-hud">REMAP // PRIVATE</span>
         </div>
@@ -189,7 +189,7 @@ function ProgramView({ program, numbers, firstName, goal, units }: {
       <Block title="SAFETY"><ul className="space-y-1.5">{program.safety.map(s => <li key={s}>▸ {s}</li>)}</ul></Block>
 
       <p className="font-['JetBrains_Mono'] text-[11px] text-white/40 leading-relaxed print:text-black">
-        General fitness guidance built for you by Everyday Hustle Co.'s AI coach from your answers, not medical advice. Want Coach Jay reviewing your progress and adjusting this with you? Apply for 1:1 coaching on the Everyday Hustle Co. site.
+        General fitness guidance built for you by JayLee Hustle's AI coach from your answers, not medical advice. Want Coach Jay reviewing your progress and adjusting this with you? Apply for 1:1 coaching at jayleefit.com.
       </p>
     </article>
   );
