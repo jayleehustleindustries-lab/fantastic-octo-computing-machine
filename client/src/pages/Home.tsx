@@ -481,9 +481,25 @@ export default function Home() {
             <a href="/remap" className="inline-block mt-6 font-['JetBrains_Mono'] text-xs tracking-widest text-hud hover:text-white">OR START TODAY WITH REMAP →</a>
             <div className="mt-12 font-['JetBrains_Mono'] text-xs text-hud/50 tracking-widest animate-bounce">↓ SCROLL</div>
           </div>
-          <div className="w-full max-w-[420px] justify-self-center lg:justify-self-end">
-            <img src={ASSETS.heroPhoto} alt="Coach Jay" className="w-full aspect-[4/5] object-cover border border-hud/30 shadow-[0_0_40px_rgb(56_198_255/0.15)]" />
-          </div>
+          <AgentModule code="CJ/01" name="COACH JAY" status="online" className="w-full max-w-[420px] justify-self-center lg:justify-self-end border-hud/40! shadow-[0_0_40px_rgb(56_198_255/0.15)]">
+            <div className="relative overflow-hidden">
+              <img src={ASSETS.heroPhoto} alt="Coach Jay" className="block w-full aspect-[4/5] object-cover" />
+              <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,transparent_55%,rgb(5_7_11/0.85))]" />
+              <div aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-30 bg-[linear-gradient(rgb(56_198_255/0.08)_1px,transparent_1px),linear-gradient(90deg,rgb(56_198_255/0.08)_1px,transparent_1px)] bg-[size:28px_28px]" />
+              <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-px bg-hud/60 shadow-[0_0_12px_rgb(56_198_255)] hud-scan" />
+              <div aria-hidden="true" className="pointer-events-none absolute left-[38%] top-[27%] h-[30%] w-[34%] -translate-x-1/2 -translate-y-1/2">
+                <span className="absolute left-0 top-0 h-4 w-4 border-l-2 border-t-2 border-hud" />
+                <span className="absolute right-0 top-0 h-4 w-4 border-r-2 border-t-2 border-hud" />
+                <span className="absolute bottom-0 left-0 h-4 w-4 border-b-2 border-l-2 border-hud" />
+                <span className="absolute bottom-0 right-0 h-4 w-4 border-b-2 border-r-2 border-hud" />
+                <span className="absolute -bottom-5 left-0 font-['JetBrains_Mono'] text-[9px] tracking-widest text-hud hud-pulse">ID · COACH JAY</span>
+              </div>
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-4 font-['JetBrains_Mono'] text-[10px] tracking-widest">
+                <div className="text-white/70">HOT SPRINGS, AR<br /><span className="text-hud">CLIENTS BY APPLICATION</span></div>
+                <div className="text-right text-white/70">TIKTOK<br /><span className="text-hud">@JAYLEEHUSTLE</span></div>
+              </div>
+            </div>
+          </AgentModule>
         </div>
       </section>
 
