@@ -41,7 +41,7 @@ describe("upsertApplication → Airtable Lead Pipeline", () => {
     expect(fields).toMatchObject({
       "Lead Name": "Test Operator",
       Email: "op@test.com",
-      Source: "jayleefit.com MAO application",
+      Source: "jayleefit.com application",
       "Funnel Stage": "Application — phase 1 of 4",
     });
     expect(fields["Created Date"]).toMatch(/^\d{4}-\d{2}-\d{2}$/);

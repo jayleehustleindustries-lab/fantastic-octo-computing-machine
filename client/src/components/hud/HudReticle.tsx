@@ -89,7 +89,7 @@ export function HudReticle({ className = "" }: { className?: string }) {
         <circle cx={C} cy={C} r={22} fill="#05070b" stroke="#7dd9ff" strokeWidth="1.5" />
         <text x={C} y={C + 5} textAnchor="middle" fill="#e8f1fa" fontSize="14" letterSpacing="2"
           style={{ fontFamily: "'Chakra Petch', sans-serif", fontWeight: 600 }}>
-          MAO
+          JLH
         </text>
       </svg>
 
@@ -97,7 +97,7 @@ export function HudReticle({ className = "" }: { className?: string }) {
       <div className="pointer-events-none absolute left-0 top-[6%] font-['JetBrains_Mono'] text-[10px] leading-relaxed tracking-widest text-white/60">
         <div className="flex items-center gap-2 text-hud">
           <span className="h-1.5 w-1.5 rounded-full bg-hud shadow-[0_0_8px_rgb(56_198_255)] hud-pulse" />
-          MAO SYSTEM · ONLINE
+          SYSTEM · ONLINE
         </div>
       </div>
       <div className="pointer-events-none absolute right-0 top-[6%] text-right font-['JetBrains_Mono'] text-[10px] tracking-widest text-white/60">
@@ -105,7 +105,7 @@ export function HudReticle({ className = "" }: { className?: string }) {
         <div className="text-hud tabular-nums">{clock}</div>
       </div>
       <div className="pointer-events-none absolute -bottom-[2%] left-0 font-['JetBrains_Mono'] text-[10px] tracking-widest text-white/60">
-        OPERATORS ADMITTED:<br />
+        CLIENTS ADMITTED:<br />
         <span className="text-hud">BY APPLICATION</span>
       </div>
       <div className="pointer-events-none absolute -bottom-[2%] right-0 text-right font-['JetBrains_Mono'] text-[10px] tracking-widest text-white/60">

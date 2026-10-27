@@ -5,14 +5,14 @@ import { ProgramArchitect } from "@/components/ProgramArchitect";
 import { AgentModule } from "@/components/hud/AgentModule";
 import { BootLine } from "@/components/hud/BootLine";
 import { HudBackdrop } from "@/components/hud/HudBackdrop";
-import { HudReticle } from "@/components/hud/HudReticle";
 import { AskJay, openAskJay, type AskJayLead } from "@/components/hud/AskJay";
-import { COACH, REMAP, SERVICES, TERMS, TIERS } from "@shared/maoContent";
+import { COACH, REMAP, SERVICES, TIERS } from "@shared/maoContent";
 import { captureRef } from "@/lib/visit";
 
 // ── Versioned campaign assets served with the application ──────────────────
 const ASSETS = {
   coachPortrait: "/images/coach-jay-flex.jpg",
+  heroPhoto: "/images/coach-jay-side.jpg",
   galleryOperatorFocus: "/images/operator-focus.jpg",
   galleryAbsoluteFocus: "/images/absolute-focus.jpg",
   galleryTheVisionary: "/images/the-visionary.jpg",
@@ -208,7 +208,7 @@ function ApplyForm({ onQualified, prefill }: {
           <div className="font-['Bebas_Neue'] text-2xl text-white mb-2">PHASE 1 — IDENTITY <span className="text-white/40 text-lg">// WHO IS APPLYING?</span></div>
           <div>
             <label className={labelCls}>EMAIL *</label>
-            <input type="email" className={inputCls} placeholder="operator@company.com"
+            <input type="email" className={inputCls} placeholder="you@email.com"
               value={email} onChange={e => setEmail(e.target.value)}
               required />
             <p className="font-['JetBrains_Mono'] text-xs text-white/30 mt-1">We'll use this email to contact you with your qualification results and next steps.</p>
@@ -351,7 +351,7 @@ function ApplyForm({ onQualified, prefill }: {
           <label className="flex items-start gap-3 cursor-pointer">
             <input type="checkbox" checked={p4.investmentAck} onChange={e => setP4({...p4, investmentAck: e.target.checked})}
               className="mt-0.5 accent-hud-deep" />
-            <span className="font-['JetBrains_Mono'] text-xs text-white/70">I understand MAO packages are premium coaching investments, not subscriptions, and pricing is revealed after qualification.</span>
+            <span className="font-['JetBrains_Mono'] text-xs text-white/70">I understand coaching packages are premium investments, not subscriptions, and pricing is revealed after qualification.</span>
           </label>
           <label className="flex items-start gap-3 cursor-pointer">
             <input type="checkbox" checked={p4.reviewAgreement} onChange={e => setP4({...p4, reviewAgreement: e.target.checked})}
@@ -450,10 +450,6 @@ export default function Home() {
       {/* ── HERO ─────────────────────────────────────────────────────────── */}
       <section id="hero" className="min-h-screen flex flex-col justify-center pt-14 relative overflow-hidden">
         <div aria-hidden="true" className="absolute inset-0" style={{ background: "radial-gradient(circle at 72% 45%, rgb(37 99 255 / 0.16), transparent 55%)" }} />
-        {/* Phone: reticle sits behind the headline */}
-        <div aria-hidden="true" className="lg:hidden absolute -right-24 top-24 w-[360px] opacity-25 pointer-events-none [&_div_div]:hidden">
-          <HudReticle />
-        </div>
         <div className="max-w-6xl mx-auto px-4 relative z-10 w-full grid lg:grid-cols-[1.15fr_0.85fr] gap-10 items-center">
           <div>
             <BootLine />
@@ -461,15 +457,15 @@ export default function Home() {
               JAYLEE HUSTLE ·· HOT SPRINGS, ARKANSAS
             </div>
             <div className="mb-4">
-              <h1 className="font-['Bebas_Neue'] text-[120px] md:text-[180px] leading-none text-white tracking-tight hud-glow">MAO</h1>
-              <div className="font-['Chakra_Petch'] font-semibold text-2xl md:text-4xl tracking-[0.3em] text-hud">METHODOLOGY</div>
-              <div className="font-['JetBrains_Mono'] text-xs text-white/30 tracking-widest mt-2">JAYLEE HUSTLE INDUSTRIES</div>
+              <h1 className="font-['Bebas_Neue'] text-[84px] md:text-[140px] leading-[0.9] text-white tracking-tight hud-glow">THE DAILY<br />HUSTLE</h1>
+              <div className="font-['Chakra_Petch'] font-semibold text-lg md:text-2xl tracking-[0.3em] text-hud mt-3">WITH COACH JAY</div>
+              <a href="https://www.tiktok.com/@jayleehustle" target="_blank" rel="noopener noreferrer" className="inline-block font-['JetBrains_Mono'] text-xs text-white/50 hover:text-hud tracking-widest mt-2">@JAYLEEHUSTLE ON TIKTOK</a>
             </div>
             <div className="relative w-40 h-px bg-white/10 mb-6 overflow-hidden">
               <div className="absolute inset-0 hud-draw bg-gradient-to-r from-hud to-hud-deep" />
             </div>
             <p className="font-['JetBrains_Mono'] text-sm text-white/70 max-w-2xl leading-relaxed mb-3">
-              JayLee Hustle Industries uses the MAO (Massive Action Orientation) Framework—a practical system combining physical conditioning, focused habits, and accountability for busy founders and career professionals.
+              JayLee Hustle is coaching built for the daily hustle: training, nutrition and accountability that fit a busy life, from Coach Jay in Hot Springs, Arkansas.
             </p>
             <p className="font-['JetBrains_Mono'] text-sm text-white/70 max-w-2xl leading-relaxed mb-10">
               Adaptation is the game. Ask Jay anything or build a starting plan in a two-minute chat, then apply for 1:1 coaching.
@@ -485,7 +481,9 @@ export default function Home() {
             <a href="/remap" className="inline-block mt-6 font-['JetBrains_Mono'] text-xs tracking-widest text-hud hover:text-white">OR START TODAY WITH REMAP →</a>
             <div className="mt-12 font-['JetBrains_Mono'] text-xs text-hud/50 tracking-widest animate-bounce">↓ SCROLL</div>
           </div>
-          <HudReticle className="hidden lg:block w-full max-w-[460px] justify-self-end" />
+          <div className="w-full max-w-[420px] justify-self-center lg:justify-self-end">
+            <img src={ASSETS.heroPhoto} alt="Coach Jay" className="w-full aspect-[4/5] object-cover border border-hud/30 shadow-[0_0_40px_rgb(56_198_255/0.15)]" />
+          </div>
         </div>
       </section>
 
@@ -511,20 +509,12 @@ export default function Home() {
             </div>
           ))}
         </div>
-        <dl className="mt-8 grid md:grid-cols-2 gap-4">
-          {TERMS.filter(t => t.code === "G/01" || t.code === "G/02").map(t => (
-            <div key={t.code} className="border-l-2 border-hud/50 pl-4">
-              <dt className="font-['JetBrains_Mono'] text-[10px] text-hud tracking-widest mb-1">{t.term}</dt>
-              <dd className="font-['JetBrains_Mono'] text-xs text-white/55 leading-relaxed">{t.def}</dd>
-            </div>
-          ))}
-        </dl>
       </Section>
 
       {/* ── INVESTMENT ───────────────────────────────────────────────────── */}
       <Section id="investment" index="02 /" title="PACKAGES" className="border-t border-white/5">
         <p className="font-['JetBrains_Mono'] text-sm text-white/60 max-w-2xl mb-8">
-          Two ways in. Start today with a Remap built around your body and schedule, or apply for 1:1 coaching with Coach Jay on the MAO methodology.
+          Two ways in. Start today with a Remap built around your body and schedule, or apply for 1:1 coaching with Coach Jay.
         </p>
         <AgentModule code="INV/00" name={REMAP.name} status={remapOffer.data?.available ? "online" : "standby"} label={remapOffer.data?.available ? "AVAILABLE NOW" : "OPENING SOON"} className="mb-12 border-hud/70! shadow-[0_0_32px_rgb(56_198_255/0.12)]">
           <div className="p-6 grid md:grid-cols-[1.1fr_0.9fr] gap-6 items-center">
@@ -578,7 +568,7 @@ export default function Home() {
             </AgentModule>
           ))}
         </div>
-        <p className="font-['JetBrains_Mono'] text-[10px] text-white/30 mt-6">* IN-PERSON INTENSIVES SUBJECT TO COACH AVAILABILITY AND SCHEDULING. ALL PACKAGES BY APPLICATION VIA THE MAO INTAKE.</p>
+        <p className="font-['JetBrains_Mono'] text-[10px] text-white/30 mt-6">* IN-PERSON INTENSIVES SUBJECT TO COACH AVAILABILITY AND SCHEDULING. ALL COACHING PACKAGES BY APPLICATION.</p>
       </Section>
 
       {/* ── COACH JAY ────────────────────────────────────────────────────── */}
@@ -704,7 +694,7 @@ export default function Home() {
           For already-onboarded clients only. Once Coach Jay has approved your application and issued an Order ID, settle your invoice via PayPal below.
         </p>
         <div className="border border-hud/30 p-4 bg-hud-deep/5 mb-8 inline-block">
-          <span className="font-['JetBrains_Mono'] text-xs text-hud tracking-widest">NEW HERE? RUN THE INTAKE ABOVE. MAO DOES NOT SELL OFF THE SHELF.</span>
+          <span className="font-['JetBrains_Mono'] text-xs text-hud tracking-widest">NEW HERE? RUN THE INTAKE ABOVE. COACHING IS BY APPLICATION ONLY.</span>
         </div>
         <div className="grid lg:grid-cols-2 gap-10">
           {/* PayPal panel */}
@@ -785,13 +775,14 @@ export default function Home() {
           <div className="grid md:grid-cols-3 gap-8 mb-8">
             <div>
               <div className="font-['Bebas_Neue'] text-2xl text-white mb-3">JAYLEE HUSTLE</div>
-              <p className="font-['JetBrains_Mono'] text-xs text-white/40 leading-relaxed">High-performance coaching portal. Body recomposition, personal training, and hustle coaching orchestrated by the MAO operating system. Investment tiers — not subscriptions. By application only.</p>
+              <p className="font-['JetBrains_Mono'] text-xs text-white/40 leading-relaxed">Coaching for the daily hustle: body recomposition, personal training and accountability from Coach Jay. 1:1 coaching by application; Remap available now.</p>
             </div>
             <div>
               <div className="font-['JetBrains_Mono'] text-xs text-hud tracking-widest mb-3">CONTACT</div>
               <div className="font-['JetBrains_Mono'] text-xs text-white/50 space-y-1">
                 <div>Jay.everydayhustleco@gmail.com</div>
                 <div>PayPal: magicdeals.wholesale@gmail.com</div>
+                <a href="https://www.tiktok.com/@jayleehustle" target="_blank" rel="noopener noreferrer" className="block hover:text-hud">TikTok: @jayleehustle</a>
               </div>
             </div>
             <div>
@@ -807,7 +798,7 @@ export default function Home() {
           </div>
           <div className="border-t border-white/5 pt-6">
             <p className="font-['JetBrains_Mono'] text-[10px] text-white/20 tracking-widest">
-              © 2026 JAYLEE HUSTLE · JAYLEE HUSTLE INDUSTRIES LLC — JAYLEEFIT.COM · MAO METHODOLOGY
+              © 2026 JAYLEE HUSTLE · JAYLEE HUSTLE INDUSTRIES LLC — JAYLEEFIT.COM · @JAYLEEHUSTLE
             </p>
           </div>
         </div>

@@ -47,10 +47,8 @@ export const REMAP = {
 };
 
 export const TERMS = [
-  { code: "G/00", term: "FOUNDER — MEET COACH JAY", def: "Founder of JayLee Hustle Industries. Author of the MAO Framework. Coach to the Operators on this platform — every protocol on this site comes from his system, not a textbook. Coach Jay built the MAO Framework in the field — not in a classroom. Every Operator on the roster is coached against the same standard he holds himself to. Adaptation is the game." },
+  { code: "G/00", term: "FOUNDER — MEET COACH JAY", def: "Founder of JayLee Hustle Industries. Every program on this site comes from his own coaching system, not a textbook. Coach Jay built it in the field, not in a classroom, and holds every client to the same standard he holds himself to. Adaptation is the game." },
   { code: "G/01", term: "OPERATOR", def: "A high-output founder, executive, or career professional whose physical conditioning is the lever that compounds every other system in their life. We do not coach hobbyists. We coach Operators." },
-  { code: "G/02", term: "MAO (MASSIVE ACTION ORIENTATION)", def: "The proprietary JayLee framework: a triad of physical conditioning, neural optimization, and strict accountability. Every protocol is engineered to compound across all three planes simultaneously — not in isolation." },
-  { code: "G/03", term: "SWARM ECOSYSTEM", def: "The MAO operating model that connects programming, check-ins, communication, and evidence review around each Operator. Automation is introduced only where the supporting systems are configured and supervised." },
 ];
 
 export const COACH = {
@@ -58,7 +56,7 @@ export const COACH = {
   base: "Hot Springs, Arkansas",
   company: "JayLee Hustle Industries LLC",
   bio: [
-    "Jordan Lee — \"Coach Jay\" — is the founder of JayLee Hustle Industries LLC, based in Hot Springs, Arkansas. He built his coaching approach on one belief: sustainable progress comes from realistic systems, not extreme programs that fall apart in week two. MAO is his operating framework for consistent training and accountability.",
+    "Jordan Lee — \"Coach Jay\" — is the founder of JayLee Hustle Industries LLC, based in Hot Springs, Arkansas. He built his coaching approach on one belief: sustainable progress comes from realistic systems, not extreme programs that fall apart in week two. The daily hustle is his system for consistent training and accountability.",
     "Jordan coaches founders, athletes, and busy dads specifically because he understands the life — the early mornings, the packed schedules, the guilt of putting yourself last. His approach strips away the noise and builds programs that actually fit your week, your equipment, and your energy. Home-based training. No gym required. Real accountability.",
   ],
   blocks: [

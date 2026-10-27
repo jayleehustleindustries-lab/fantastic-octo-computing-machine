@@ -119,7 +119,7 @@ export async function upsertApplication(email: string, patch: Partial<{
   return createLead({
     ...fields,
     Email: email,
-    Source: "jayleefit.com MAO application",
+    Source: "jayleefit.com application",
     "Created Date": new Date().toISOString().slice(0, 10),
   });
 }

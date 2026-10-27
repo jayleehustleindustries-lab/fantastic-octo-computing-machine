@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-const LINE = "INITIALIZING MAO PROTOCOL… READY";
+const LINE = "LOADING THE DAILY HUSTLE… READY";
 
 /** Types the boot line once. Shows it complete for reduced-motion visitors. */
 export function BootLine() {
