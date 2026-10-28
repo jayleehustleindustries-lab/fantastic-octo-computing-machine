@@ -6,7 +6,6 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { handleStripeWebhook, stripeConfigured } from "../remap";
 import { registerStorageProxy } from "./storageProxy";
-import { registerBrain } from "../brain";
 import { registerMcp } from "../mcp";
 import { appRouter, siteCapabilities } from "../routers";
 import { ENV } from "./env";
@@ -64,9 +63,6 @@ async function startServer() {
 
   // The site as an MCP server for Claude's custom connectors (off until configured).
   registerMcp(app);
-
-  // The owner-only Neural HUD (/brain): signal-only priorities.
-  registerBrain(app);
 
   // Manus runtime pieces, only when this runs inside Manus.
   if (ENV.forgeApiUrl && ENV.forgeApiKey) registerStorageProxy(app);
