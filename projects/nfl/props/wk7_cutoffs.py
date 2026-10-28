@@ -2,7 +2,8 @@
 import sys, numpy as np, pandas as pd
 sys.path.insert(0, sys.argv[1]); from common import p_over
 W = 0.3; BE = {"pk3": 6 ** (-1/3), "pk2": 3 ** -0.5}
-P = pd.read_pickle(sys.argv[1] + '/proj_raw_wk7.pkl')
+SUF = sys.argv[2] if len(sys.argv) > 2 else '_wk7'
+P = pd.read_pickle(sys.argv[1] + f'/proj_raw{SUF}.pkl')
 keep = []
 for (t, stat), g in P.groupby(['team', 'stat']):
     n = {'pass_yds': 1, 'pass_tds': 1, 'rush_yds': 2}.get(stat, 3)
@@ -23,7 +24,7 @@ for _, r in P.iterrows():
                      proj=round(r.mu, 1), median=r['median'], g26=r.g26, inj_tag=bool(r.inj_tag), inj_status=r.inj_status, more_pk3=cut(r, 'more', BE['pk3']), less_pk3=cut(r, 'less', BE['pk3']),
                      more_pk2=cut(r, 'more', BE['pk2']), less_pk2=cut(r, 'less', BE['pk2'])))
 D = pd.DataFrame(rows).sort_values(['day', 'kick', 'game', 'stat', 'proj'], ascending=[True, True, True, True, False])
-D.to_csv(sys.argv[1] + '/wk7_cutoffs.csv', index=False)
+D.to_csv(sys.argv[1] + f'/cutoffs{SUF}.csv', index=False)
 pd.set_option('display.width', 220)
 print(D[D.game.str.startswith(('SF', 'ATL'))].drop(columns=['day']).to_string(index=False))
 print('\nrows total', len(D), 'games', D.game.nunique() // 2)

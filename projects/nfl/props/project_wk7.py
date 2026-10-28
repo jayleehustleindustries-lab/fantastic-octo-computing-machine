@@ -12,7 +12,7 @@ import os
 SUF = os.environ.get('OUT_SUFFIX', '')
 for item in filter(None, os.environ.get('DROP', '').split(',')):
     nm, sn = item.split(':'); pgh = pgh[~((pgh.name == nm) & (pgh.season == int(sn)))]
-today = games[(games.season == SEASON) & (games.week == WEEK) & (games.gameday >= '2026-10-25')]
+today = games[(games.season == SEASON) & (games.week == WEEK) & (games.gameday >= os.environ.get('FROM_DATE', '2026-10-25'))]
 teams = set(today.team)
 
 # ---- candidate pool: players whose latest team is one of today's teams and who played in 2026
